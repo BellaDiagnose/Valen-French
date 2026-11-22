@@ -1,0 +1,327 @@
+<!--pages/french/french.wxml-->
+<view class="page">
+
+  <!-- 右上角悬浮球：可拖动，点击翻转；正面进度环，背面词库选择 -->
+  <view
+    class="float-ball"
+    style="left: {{floatX}}px; top: {{floatY}}px;"
+    bindtouchstart="onFloatTouchStart"
+    bindtouchmove="onFloatTouchMove"
+    bindtouchend="onFloatTouchEnd"
+  >
+    <view class="float-inner {{floatFlipped ? 'is-flipped' : ''}}">
+      <!-- 正面：今日进度 -->
+      <view class="float-face float-front">
+        <view
+          class="ring-track"
+          style="background: conic-gradient(#3d5bd9 0%, #5b7cf0 {{ringPercent}}%, #edf0f8 {{ringPercent}}%, #edf0f8 100%)"
+        >
+          <view class="ring-inner">
+            <text class="ring-num">{{streak}}</text>
+            <text class="ring-unit">天</text>
+          </view>
+        </view>
+      </view>
+      <!-- 背面：词库选择 -->
+      <view class="float-face float-back">
+        <view class="float-back-title">切换词库</view>
+        <view
+          wx:for="{{sources}}" wx:key="key"
+          class="float-source {{source === item.key ? 'active' : ''}}"
+          data-source="{{item.key}}" catchtap="onSourceChange"
+        >
+          <text>{{item.label}}</text>
+          <text wx:if="{{source === item.key}}" class="float-source-check">✓</text>
+        </view>
+        <view class="float-back-hint">点击球体翻回</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Tab 切换（5个） -->
+  <view class="tabs">
+    <view
+      wx:for="{{tabs}}" wx:key="key"
+      class="tab {{activeTab === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}" bindtap="onTabChange"
+    >{{item.label}}</view>
+  </view>
+
+  <!-- ========== 模块一：单词卡 ========== -->
+  <view wx:if="{{activeTab === 'card' && card}}" class="panel">
+    <!-- 简明法语：按课次背诵 -->
+    <scroll-view wx:if="{{source === 'simple'}}" class="lesson-picker" scroll-x enable-flex>
+      <view
+        wx:for="{{lessonOptions}}" wx:key="value"
+        class="lesson-chip {{lessonFilter === item.value ? 'active' : ''}}"
+        data-lesson="{{item.value}}" bindtap="onLessonFilter"
+      >
+        <view class="lesson-chip-label">{{item.label}}</view>
+        <view class="lesson-chip-count">{{item.count}} 词</view>
+      </view>
+    </scroll-view>
+    <view class="flashcard {{flipped ? 'is-flipped' : ''}}" style="height: {{cardHeight}}px" bindtap="flipCard">
+      <view class="face face-front">
+        <view class="card-lesson">{{source === 'simple' ? '第 ' + card.unit + ' 课' : '第 ' + card.unit + ' 单元'}} · {{card.cat || card.pos || '词'}}</view>
+        <view class="word-fr">{{card.fr}}</view>
+        <view class="word-phonetic" wx:if="{{card.phonetic}}">{{card.phonetic}}</view>
+        <view class="card-verb-link" wx:if="{{card.pos && card.pos.indexOf('v.') === 0}}" catchtap="studyVerbFromCard">背这个动词的变位 →</view>
+        <view class="flip-hint">点击卡片查看释义 ↻</view>
+      </view>
+      <view class="face face-back">
+        <view class="card-lesson">{{source === 'simple' ? '第 ' + card.unit + ' 课' : '第 ' + card.unit + ' 单元'}} · {{card.theme || ''}}</view>
+        <view class="word-cn">{{card.cn}}</view>
+        <!-- 动词卡：内嵌现在时变位，背单词时一起背 -->
+        <view class="card-conj" wx:if="{{cardIsVerb && cardConjugation}}">
+          <view class="card-conj-title">现在时变位</view>
+          <view class="card-conj-row" wx:for="{{cardConjugation}}" wx:key="index">
+            <text class="card-conj-person">{{cardPersonLabels[index]}}</text>
+            <text class="card-conj-form">{{item}}</text>
+          </view>
+          <view class="card-conj-more" catchtap="studyVerbFromCard">查看全部 5 种时态 →</view>
+        </view>
+        <view class="example" wx:if="{{card.example}}">
+          <view class="example-fr">{{card.example}}</view>
+          <view class="example-cn">{{card.exampleCn}}</view>
+        </view>
+        <view class="flip-hint">点击卡片返回正面 ↻</view>
+      </view>
+    </view>
+
+    <!-- 操作按钮：置于卡片下方，避开右上角悬浮球 -->
+    <view class="card-actions">
+      <view class="btn-nav" bindtap="prevCard">← 上一个</view>
+      <view class="btn-rate btn-remember" bindtap="markRemembered">记住了 ✓</view>
+      <view class="btn-rate btn-forget" bindtap="markForgotten">忘记了 ↻</view>
+      <view class="btn-nav" bindtap="nextCard">下一个 →</view>
+    </view>
+    <view class="rate-hint">记住了 → 隔更久复习；忘记了 → 缩短间隔</view>
+  </view>
+
+  <!-- ========== 模块二：自测 ========== -->
+  <view wx:if="{{activeTab === 'quiz' && quiz}}" class="panel">
+    <view class="quiz-meta">
+      <view class="quiz-score">正确 {{quizRight}} / {{quizTotal}}</view>
+      <view class="quiz-reset" bindtap="resetQuizStats">重置</view>
+    </view>
+    <view class="quiz-question">
+      <view class="quiz-mode-tag">{{quiz.mode === 'fr2cn' ? '选出正确的中文意思' : '选出正确的法语单词'}}</view>
+      <view class="quiz-word">{{quiz.mode === 'fr2cn' ? quiz.word.fr : quiz.word.cn}}</view>
+    </view>
+    <view class="options">
+      <view
+        wx:for="{{quiz.options}}" wx:key="id"
+        class="option
+          {{quizAnswered && item.id === quiz.answerId ? 'opt-correct' : ''}}
+          {{quizAnswered && item.id === quizSelectedId && item.id !== quiz.answerId ? 'opt-wrong' : ''}}"
+        data-id="{{item.id}}" bindtap="onSelectOption"
+      >
+        <text class="option-text">{{item.text}}</text>
+        <text wx:if="{{quizAnswered && item.id === quiz.answerId}}" class="option-mark">✓</text>
+        <text wx:elif="{{quizAnswered && item.id === quizSelectedId}}" class="option-mark">✗</text>
+      </view>
+    </view>
+    <view wx:if="{{quizAnswered}}" class="quiz-feedback {{quizCorrect ? 'fb-right' : 'fb-wrong'}}">
+      <view class="fb-title">{{quizCorrect ? '答对了 ✓' : '答错了 ✗'}}</view>
+      <view wx:if="{{!quizCorrect}}" class="fb-detail">{{quiz.word.fr}} = {{quiz.word.cn}}</view>
+      <view class="fb-example" wx:if="{{quiz.word.example}}">{{quiz.word.example}}</view>
+      <view class="fb-example-cn" wx:if="{{quiz.word.exampleCn}}">{{quiz.word.exampleCn}}</view>
+    </view>
+    <view class="btn-primary" bindtap="nextQuiz">下一题 →</view>
+  </view>
+
+  <!-- ========== 模块三：动词变位 ========== -->
+  <view wx:if="{{activeTab === 'verb'}}" class="panel">
+    <scroll-view class="verb-picker" scroll-x enable-flex>
+      <view
+        wx:for="{{verbs}}" wx:key="id"
+        class="verb-chip {{verbIndex === index ? 'active' : ''}}"
+        data-index="{{index}}" bindtap="onVerbTap"
+      >{{item.name}}</view>
+    </scroll-view>
+    <view class="verb-head">
+      <view class="verb-name-row">
+        <view class="verb-name">{{currentVerb.name}}</view>
+      </view>
+      <view class="verb-cn">{{currentVerb.cn}}</view>
+      <view class="verb-group">{{currentVerb.group}}</view>
+      <view class="verb-memory-info">
+        <text class="verb-stage-label">{{verbStageLabel}}</text>
+        <text wx:if="{{verbNextDue}}" class="verb-next-due">{{verbNextDue}}</text>
+      </view>
+    </view>
+    <!-- 时态切换 -->
+    <scroll-view class="tense-picker" scroll-x enable-flex>
+      <view
+        wx:for="{{tenseNames}}" wx:key="*this"
+        class="tense-chip {{tenseIndex === index ? 'active' : ''}}"
+        data-index="{{index}}" bindtap="onTenseTap"
+      >{{item}}</view>
+    </scroll-view>
+    <view class="conj-table">
+      <view class="conj-row conj-header">
+        <view class="conj-cell person-col">人称</view>
+        <view class="conj-cell">{{tenseNames[tenseIndex]}}</view>
+      </view>
+      <view wx:for="{{verbForms}}" wx:key="index" class="conj-row">
+        <view class="conj-cell person-col">{{personLabels[index]}}</view>
+        <view
+          class="conj-cell form-col {{maskForms && !revealed[index] ? 'masked' : ''}}"
+          data-index="{{index}}" bindtap="revealForm"
+        >{{maskForms && !revealed[index] ? '· · · · · ·' : item}}</view>
+      </view>
+    </view>
+    <!-- 变位背诵：按记忆曲线推进 -->
+    <view class="verb-rate-bar">
+      <view class="btn-rate btn-remember" bindtap="markVerbRemembered">记住了 ✓</view>
+      <view class="btn-rate btn-forget" bindtap="markVerbForgotten">忘记了 ↻</view>
+    </view>
+    <view class="verb-actions">
+      <view class="btn-nav" bindtap="prevVerb">← 上一个</view>
+      <view class="btn-outline" bindtap="toggleMask">{{maskForms ? '显示答案' : '遮挡自测'}}</view>
+      <view class="btn-nav" bindtap="nextVerb">下一个 →</view>
+    </view>
+  </view>
+
+  <!-- ========== 模块四：复习计划 ========== -->
+  <view wx:if="{{activeTab === 'plan'}}" class="panel">
+    <view class="plan-summary">
+      <view class="stat-card stat-due"><view class="stat-num">{{dueCount}}</view><view class="stat-label">今日待复习</view></view>
+      <view class="stat-card stat-learning"><view class="stat-num">{{learningCount}}</view><view class="stat-label">学习中</view></view>
+      <view class="stat-card stat-new"><view class="stat-num">{{newCount}}</view><view class="stat-label">新词</view></view>
+      <view class="stat-card stat-grad"><view class="stat-num">{{graduatedCount}}</view><view class="stat-label">已固化</view></view>
+    </view>
+    <view class="plan-actions">
+      <view class="btn-primary" bindtap="startReview">开始今日复习{{dueCount ? '（' + dueCount + '）' : ''}}</view>
+      <view class="btn-outline" bindtap="startNew">学今日新词{{queue.length ? '（' + queue.length + '）' : ''}}</view>
+    </view>
+    <view class="verb-review-entry" bindtap="startVerbReview">
+      <text>🔀 动词变位复习</text>
+      <text wx:if="{{verbDueCount}}" class="verb-due-badge">{{verbDueCount}} 个待复习</text>
+      <text wx:else class="verb-due-none">暂无待复习</text>
+    </view>
+    <view class="curve-note">
+      <view class="curve-title">📈 智能学习计划</view>
+      <view class="curve-desc">默认每天 {{dailyNewCount}} 词，间隔 1→2→4→7→15→30→60 天复习。正确率高自动加量，低则减量；连续 {{streak}} 天。超过 3 天没来，下次打开先做 {{forceQuizLeft || 10}} 题热身。</view>
+    </view>
+    <view wx:if="{{dueCount > 0}}" class="word-group">
+      <view class="group-title group-title-due">今日待复习 · {{dueCount}}</view>
+      <view wx:for="{{dueWords}}" wx:key="gid" class="word-row" data-group="due" data-gid="{{item.gid}}" bindtap="reviewFromWord">
+        <view class="row-main"><text class="row-fr">{{item.fr}}</text><text class="row-cn">{{item.cn}}</text></view>
+        <view class="row-stage">第{{item._stage}}阶 · 已到期</view>
+      </view>
+    </view>
+    <view wx:if="{{learningCount > 0}}" class="word-group">
+      <view class="group-title group-title-learning">学习中 · {{learningCount}}</view>
+      <view wx:for="{{learningWords}}" wx:key="gid" class="word-row" data-group="learning" data-gid="{{item.gid}}" bindtap="reviewFromWord">
+        <view class="row-main"><text class="row-fr">{{item.fr}}</text><text class="row-cn">{{item.cn}}</text></view>
+        <view class="row-stage">第{{item._stage}}阶 · {{item._dueText}}</view>
+      </view>
+    </view>
+    <view wx:if="{{newCount > 0}}" class="word-group">
+      <view class="group-title group-title-new">新词 · {{newCount}}</view>
+      <view wx:for="{{newWords}}" wx:key="gid" class="word-row" data-group="new" data-gid="{{item.gid}}" bindtap="reviewFromWord">
+        <view class="row-main"><text class="row-fr">{{item.fr}}</text><text class="row-cn">{{item.cn}}</text></view>
+        <view class="row-stage">未开始</view>
+      </view>
+    </view>
+    <view wx:if="{{graduatedCount > 0}}" class="word-group">
+      <view class="group-title group-title-grad">已固化 🎓 · {{graduatedCount}}</view>
+      <view wx:for="{{graduatedWords}}" wx:key="gid" class="word-row" data-group="graduated" data-gid="{{item.gid}}" bindtap="reviewFromWord">
+        <view class="row-main"><text class="row-fr">{{item.fr}}</text><text class="row-cn">{{item.cn}}</text></view>
+        <view class="row-stage">完成全部间隔</view>
+      </view>
+    </view>
+    <view class="plan-foot" bindtap="browseAll">浏览全部单词 →</view>
+  </view>
+
+  <!-- ========== 模块五：知识点 / 语法体系 ========== -->
+  <view wx:if="{{activeTab === 'points' && source === 'enavant'}}" class="panel">
+    <view class="points-head">
+      <view class="points-title">En Avant 知识点速查</view>
+      <view class="points-sub">共 {{enavantUnits.length}} 单元 · {{pointUnits.length}} 组分类</view>
+    </view>
+    <!-- 单元筛选 -->
+    <scroll-view class="unit-filter" scroll-x enable-flex>
+      <view class="unit-chip {{filterUnit === 0 ? 'active' : ''}}" data-unit="0" bindtap="onFilterUnit">全部</view>
+      <view
+        wx:for="{{enavantUnits}}" wx:key="unit"
+        class="unit-chip {{filterUnit === item.unit ? 'active' : ''}}"
+        data-unit="{{item.unit}}" bindtap="onFilterUnit"
+      >{{item.unit}}</view>
+    </scroll-view>
+    <view wx:for="{{pointUnits}}" wx:key="unit" wx:if="{{filterUnit === 0 || filterUnit === item.unit}}" class="point-group">
+      <view class="point-group-title">U{{item.unit}} · {{item.theme}}</view>
+      <view wx:for="{{item.points}}" wx:for-item="pt" wx:key="title" class="point-card">
+        <view class="point-fr">{{pt.title}}</view>
+        <view class="point-cn">{{pt.cn}}</view>
+      </view>
+      <!-- 单元例句（教材粉红高亮句） -->
+      <view wx:if="{{item.examples.length}}" class="ex-block">
+        <view class="ex-block-title">例句</view>
+        <view wx:for="{{item.examples}}" wx:for-item="ex" wx:key="fr" class="ex-card">
+          <view class="ex-fr">{{ex.fr}}</view>
+          <view class="ex-cn">{{ex.cn}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 简明法语：A1/A2 完整语法体系 -->
+  <view wx:if="{{activeTab === 'points' && source === 'simple'}}" class="panel">
+    <view class="points-head">
+      <view class="points-title">简明法语 · 语法体系</view>
+      <view class="points-sub">上册 A1 + A2 · 语音/入门/初级 30 课</view>
+    </view>
+    <!-- A1 / A2 筛选 -->
+    <scroll-view class="unit-filter" scroll-x enable-flex>
+      <view class="unit-chip {{filterLevel === '全部' ? 'active' : ''}}" data-level="全部" bindtap="onFilterLevel">全部</view>
+      <view class="unit-chip {{filterLevel === 'A1' ? 'active' : ''}}" data-level="A1" bindtap="onFilterLevel">A1</view>
+      <view class="unit-chip {{filterLevel === 'A2' ? 'active' : ''}}" data-level="A2" bindtap="onFilterLevel">A2</view>
+    </scroll-view>
+    <view wx:for="{{grammarGroups}}" wx:key="key" wx:if="{{filterLevel === '全部' || filterLevel === item.level}}" class="point-group">
+      <view class="point-group-title">{{item.level}} · {{item.stage}}教程</view>
+      <view wx:for="{{item.lessons}}" wx:for-item="g" wx:key="lesson" class="grammar-card">
+        <view class="grammar-head">
+          <view class="grammar-no">第 {{g.lesson}} 课</view>
+          <view class="grammar-theme" wx:if="{{g.theme}}">{{g.theme}}</view>
+        </view>
+        <view class="grammar-topic">{{g.topic}}</view>
+        <view class="grammar-points">
+          <view wx:for="{{g.points}}" wx:for-item="pt" wx:key="*this" class="grammar-point">· {{pt}}</view>
+        </view>
+        <view class="grammar-verbs" wx:if="{{g.verbs}}">本课动词：{{g.verbs}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ========== 强制自测关卡（模态层） ========== -->
+  <view wx:if="{{showForceQuiz}}" class="force-mask">
+    <view class="force-card">
+      <view class="force-icon">⏰</view>
+      <view class="force-title">欢迎回来！</view>
+      <view class="force-desc">你已经 {{forceGapDays}} 天没来了，先做 {{forceQuizLeft || 10}} 题热身，唤醒记忆再开始今天的学习。</view>
+      <view wx:if="{{quiz}}" class="force-quiz">
+        <view class="force-qword">{{quiz.mode === 'fr2cn' ? quiz.word.fr : quiz.word.cn}}</view>
+        <view class="force-qhint">选出正确的{{quiz.mode === 'fr2cn' ? '中文意思' : '法语单词'}}</view>
+        <view class="force-options">
+          <view
+            wx:for="{{quiz.options}}" wx:key="id"
+            class="force-option
+              {{quizAnswered && item.id === quiz.answerId ? 'opt-correct' : ''}}
+              {{quizAnswered && item.id === quizSelectedId && item.id !== quiz.answerId ? 'opt-wrong' : ''}}"
+            data-id="{{item.id}}" bindtap="onForceSelect"
+          >{{item.text}}</view>
+        </view>
+        <view wx:if="{{quizAnswered}}" class="force-feedback {{quizCorrect ? 'fb-right' : 'fb-wrong'}}">
+          {{quizCorrect ? '答对了 ✓' : quiz.word.fr + ' = ' + quiz.word.cn}}
+        </view>
+      </view>
+      <view wx:if="{{quizAnswered}}" class="force-next" bindtap="nextForceQuiz">
+        {{forceQuizLeft <= 1 ? '完成热身 ✓' : '下一题 →'}}
+      </view>
+      <view class="force-foot">完成后会根据正确率自动调节每日词量</view>
+    </view>
+  </view>
+
+</view>

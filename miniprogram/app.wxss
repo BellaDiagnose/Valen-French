@@ -1,0 +1,17 @@
+/* app.wxss —— 全局基础样式 */
+page {
+  --color-primary: #3d5bd9;
+  --color-text: #1f2740;
+  --color-text-secondary: #8a93ab;
+  --color-bg: #f4f6fb;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, sans-serif;
+  font-size: 28rpx;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  box-sizing: border-box;
+}
+
+view, text, scroll-view {
+  box-sizing: border-box;
+}
