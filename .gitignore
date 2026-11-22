@@ -1,2 +1,11 @@
 .DS_Store
 miniprogram/audio/
+node_modules/
+
+# Xcode
+ios/build/
+ios/DerivedData/
+ios/**/xcuserdata/
+ios/**/*.xcuserstate
+*.ipa
+*.dSYM.zip
