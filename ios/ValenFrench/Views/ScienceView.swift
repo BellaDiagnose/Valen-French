@@ -3,8 +3,15 @@ import SwiftUI
 /// 科学独立页：七+八年级生物 / 八年级化学
 /// 每日背诵卡组（到期 + 当日额度新卡）、公式、自测、复习计划四块
 struct ScienceView: View {
+    /// 首页模块卡进入时指定学科；为 nil 时沿用上次选择
+    var initialSubject: ScienceStore.Subject?
+
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store = ScienceStore()
+
+    init(initialSubject: ScienceStore.Subject? = nil) {
+        self.initialSubject = initialSubject
+    }
 
     var body: some View {
         NavigationStack {
@@ -50,7 +57,10 @@ struct ScienceView: View {
                         .foregroundColor(Theme.primary)
                 }
             }
-            .onAppear { store.refreshDay() }
+            .onAppear {
+                if let initialSubject { store.selectSubject(initialSubject) }
+                store.refreshDay()
+            }
             .toast(text: $store.toast)
         }
     }

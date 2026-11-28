@@ -2,16 +2,44 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
+
+    @State private var showHome = true
     @State private var showScience = false
+    @State private var scienceSubject: ScienceStore.Subject = .bio
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Theme.bg.ignoresSafeArea()
 
+            if showHome {
+                HomeView(onOpenFrench: openFrench, onOpenScience: openScience)
+                    .transition(.opacity)
+            } else {
+                contentStack
+                    .transition(.opacity)
+            }
+        }
+        .toast(text: $store.toast)
+        .sheet(isPresented: $store.showForceQuiz) {
+            ForceQuizView()
+                .environmentObject(store)
+                .interactiveDismissDisabled(true)
+        }
+        .sheet(isPresented: $showScience) {
+            ScienceView(initialSubject: scienceSubject)
+        }
+    }
+
+    // MARK: 法语页
+
+    private var contentStack: some View {
+        ZStack(alignment: .topTrailing) {
             VStack(spacing: 0) {
+                homeBar
+
                 TabBarView()
                     .padding(.horizontal, 16)
-                    .padding(.top, 6)
+                    .padding(.top, 2)
                     .padding(.bottom, 10)
 
                 scienceEntry
@@ -27,20 +55,54 @@ struct RootView: View {
                 .padding(.trailing, 14)
                 .padding(.top, 4)
         }
-        .toast(text: $store.toast)
-        .sheet(isPresented: $store.showForceQuiz) {
-            ForceQuizView()
-                .environmentObject(store)
-                .interactiveDismissDisabled(true)
+    }
+
+    /// 返回首页（小程序走 navigateBack，iOS 自绘一条）
+    private var homeBar: some View {
+        HStack(spacing: 8) {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { showHome = true }
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("首页")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(Theme.primary)
+                .padding(.horizontal, 10)
+                .frame(height: 28)
+                .background(Capsule().fill(Theme.chip))
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 0)
+
+            Text(store.source.label)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(Theme.sub)
+                .lineLimit(1)
         }
-        .sheet(isPresented: $showScience) {
-            ScienceView()
-        }
+        .padding(.horizontal, 16)
+        .padding(.top, 6)
+        .padding(.trailing, 100)
+    }
+
+    private func openFrench(_ source: WordSource, _ tab: AppStore.Tab) {
+        if store.source != source { store.switchSource(source) }
+        store.selectTab(tab)
+        if tab == .quiz { store.buildQuiz() }
+        withAnimation(.easeOut(duration: 0.2)) { showHome = false }
+    }
+
+    private func openScience(_ subject: ScienceStore.Subject) {
+        scienceSubject = subject
+        showScience = true
     }
 
     /// 独立科学页入口（避开右上角悬浮球）
     private var scienceEntry: some View {
-        Button { showScience = true } label: {
+        Button { openScience(.bio) } label: {
             HStack(spacing: 8) {
                 Image(systemName: "atom")
                     .font(.system(size: 15, weight: .semibold))

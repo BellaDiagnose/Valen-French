@@ -16,6 +16,7 @@
 		FA000000000000000000002D /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001B /* SpeechService.swift */; };
 		FA000000000000000000002E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001C /* Theme.swift */; };
 		FA000000000000000000002F /* FloatingRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001D /* FloatingRingView.swift */; };
+		FA0000000000000000000041 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000040 /* HomeView.swift */; };
 		FA0000000000000000000030 /* CardTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001E /* CardTabView.swift */; };
 		FA0000000000000000000031 /* QuizTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001F /* QuizTabView.swift */; };
 		FA0000000000000000000032 /* VerbTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000020 /* VerbTabView.swift */; };
@@ -40,6 +41,7 @@
 		FA000000000000000000001B /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 		FA000000000000000000001C /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		FA000000000000000000001D /* FloatingRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingRingView.swift; sourceTree = "<group>"; };
+		FA0000000000000000000040 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		FA000000000000000000001E /* CardTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardTabView.swift; sourceTree = "<group>"; };
 		FA000000000000000000001F /* QuizTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizTabView.swift; sourceTree = "<group>"; };
 		FA0000000000000000000020 /* VerbTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbTabView.swift; sourceTree = "<group>"; };
@@ -125,6 +127,7 @@
 			isa = PBXGroup;
 			children = (
 				FA000000000000000000001D /* FloatingRingView.swift */,
+				FA0000000000000000000040 /* HomeView.swift */,
 				FA000000000000000000001E /* CardTabView.swift */,
 				FA000000000000000000001F /* QuizTabView.swift */,
 				FA0000000000000000000020 /* VerbTabView.swift */,
@@ -234,6 +237,7 @@
 				FA000000000000000000002D /* SpeechService.swift in Sources */,
 				FA000000000000000000002E /* Theme.swift in Sources */,
 				FA000000000000000000002F /* FloatingRingView.swift in Sources */,
+				FA0000000000000000000041 /* HomeView.swift in Sources */,
 				FA0000000000000000000030 /* CardTabView.swift in Sources */,
 				FA0000000000000000000031 /* QuizTabView.swift in Sources */,
 				FA0000000000000000000032 /* VerbTabView.swift in Sources */,
