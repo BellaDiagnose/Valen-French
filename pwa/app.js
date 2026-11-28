@@ -31,7 +31,8 @@ const KEY = {
   score: 'french_quiz_score_v1',
   hint: 'bella_install_hint_v1',
   scienceMemory: 'science_memory_v1',
-  scienceStats: 'science_stats_v1'
+  scienceStats: 'science_stats_v1',
+  sciencePlan: 'science_plan_v1'
 };
 
 const TABS = [
@@ -377,9 +378,7 @@ const S = {
 
   // 科学（与小程序 / iOS 独立记忆键）
   sciSubject: 'bio',
-  sciSeg: 'point',
-  sciGrade: 'all',
-  sciUnit: '',
+  sciSeg: 'point',        // point = 每日背诵 / formula / quiz / plan
   sciFormulaUnit: '',
   sciIndex: 0,
   sciFormulaIndex: 0,
@@ -394,6 +393,8 @@ const S = {
   sciTotal: 0,
   sciAsked: [],
   sciMemory: {},
+  sciPlan: null,          // 每日额度、新卡队列、连续天数
+  sciQueue: null,         // 从计划清单进入的队列 { kind, ids, mode, label }
 
   toastTimer: null
 };
@@ -1323,14 +1324,176 @@ function renderPoints() {
 
 /* ==================== 科学 ==================== */
 
+/* ---------- 每日卡组：今日到期 + 当日额度内的新卡 ---------- */
+
+function sciFreshPlan() {
+  const today = dayString();
+  return {
+    today,
+    lastOpenDate: today,
+    dailyNewCount: DAILY_DEFAULT,
+    streak: 1,
+    newQueues: {}     // { bio: { date, ids }, chem: { date, ids } }
+  };
+}
+
+function sciPlan() {
+  if (!S.sciPlan) S.sciPlan = read(KEY.sciencePlan, null) || sciFreshPlan();
+  return S.sciPlan;
+}
+
+function sciPersistPlan() {
+  write(KEY.sciencePlan, sciPlan());
+}
+
+function sciReviewedOn(day) {
+  return Object.keys(S.sciMemory).some((gid) => {
+    const record = S.sciMemory[gid];
+    return record && record.lastReview && dayString(new Date(record.lastReview * 1000)) === day;
+  });
+}
+
+/* 跨天：新卡队列作废，按当日额度重排；连续天数按昨天背没背过累加 */
+function sciOpenDay() {
+  const plan = sciPlan();
+  const today = dayString();
+  if (plan.today === today) return plan;
+  S.sciPlan = Object.assign({}, plan, {
+    today,
+    lastOpenDate: today,
+    streak: plan.today && sciReviewedOn(plan.today) ? (plan.streak || 1) + 1 : 1,
+    newQueues: {}
+  });
+  sciPersistPlan();
+  return S.sciPlan;
+}
+
+function sciPointIds() {
+  return Science.points(S.sciSubject).map((p) => p.id);
+}
+
+function sciPointById(id) {
+  return Science.points(S.sciSubject).find((p) => p.id === id) || null;
+}
+
+/* 新卡队列当天只定一次：背掉的卡离场后不会从后面补位，否则一天能背完整个库 */
+function sciEnsureNewQueue() {
+  const plan = sciOpenDay();
+  const today = dayString();
+  const queues = plan.newQueues || {};
+  const pinned = queues[S.sciSubject];
+  if (pinned && pinned.date === today) return pinned.ids;
+  const ids = sciPointIds()
+    .filter((id) => !S.sciMemory[id])
+    .slice(0, plan.dailyNewCount || DAILY_DEFAULT);
+  S.sciPlan = Object.assign({}, plan, {
+    newQueues: Object.assign({}, queues, { [S.sciSubject]: { date: today, ids } })
+  });
+  sciPersistPlan();
+  return ids;
+}
+
+function sciDeck() {
+  const now = nowSec();
+  const due = [];
+  sciPointIds().forEach((id) => {
+    const record = S.sciMemory[id];
+    if (record && record.stage < GRADUATED && record.dueAt && record.dueAt <= now) due.push(id);
+  });
+  due.sort((a, b) => (S.sciMemory[a].dueAt || 0) - (S.sciMemory[b].dueAt || 0));
+  const newIds = sciEnsureNewQueue().filter((id) => !S.sciMemory[id]);
+  return { due, newIds, ids: due.concat(newIds) };
+}
+
+function sciReviewedToday() {
+  const today = dayString();
+  return sciPointIds().filter((id) => {
+    const record = S.sciMemory[id];
+    return record && record.lastReview && dayString(new Date(record.lastReview * 1000)) === today;
+  }).length;
+}
+
+function sciStageLabel(record) {
+  if (!record) return '未开始';
+  if (record.stage >= GRADUATED) return '已固化';
+  return `第 ${record.stage + 1} 档 · ${STAGE_DAYS[Math.min(record.stage, STAGE_DAYS.length - 1)]} 天`;
+}
+
+/* ---------- 计划清单（当前科目：知识点 + 公式） ---------- */
+
+function sciPlanItems() {
+  const points = Science.points(S.sciSubject).map((p) => ({
+    gid: p.id, cardId: p.id, kind: 'point', title: p.cn, sub: p.en
+  }));
+  const formulas = Science.formulas(S.sciSubject).map((f) => ({
+    gid: 'f' + f.id, cardId: f.id, kind: 'formula', title: f.cn, sub: f.expr
+  }));
+  return points.concat(formulas);
+}
+
+function sciPlanBuckets() {
+  const now = nowSec();
+  const buckets = { due: [], learning: [], fresh: [], graduated: [] };
+  for (const item of sciPlanItems()) {
+    const record = S.sciMemory[item.gid];
+    if (!record) {
+      buckets.fresh.push(Object.assign({}, item, { stageText: '未开始' }));
+    } else if (record.stage >= GRADUATED) {
+      buckets.graduated.push(Object.assign({}, item, { stageText: '完成全部间隔' }));
+    } else if (record.dueAt && record.dueAt <= now) {
+      buckets.due.push(Object.assign({}, item, { stageText: '已到期', dueAt: record.dueAt }));
+    } else {
+      buckets.learning.push(Object.assign({}, item, {
+        stageText: `第 ${record.stage + 1} 档 · ${fmtMD(record.dueAt)}`
+      }));
+    }
+  }
+  buckets.due.sort((a, b) => (a.dueAt || 0) - (b.dueAt || 0));
+  return buckets;
+}
+
+/* ---------- 卡组 / 队列取卡 ---------- */
+
 function sciPoints() {
-  const list = Science.points(S.sciSubject, S.sciGrade);
-  return S.sciUnit ? list.filter((p) => p.unit === S.sciUnit) : list;
+  const ids = S.sciQueue && S.sciQueue.kind === 'point' ? S.sciQueue.ids : sciDeck().ids;
+  return ids.map(sciPointById).filter(Boolean);
 }
 
 function sciFormulas() {
+  if (S.sciQueue && S.sciQueue.kind === 'formula') {
+    return S.sciQueue.ids.map((id) => Science.formulas(S.sciSubject).find((f) => f.id === id)).filter(Boolean);
+  }
   const list = Science.formulas(S.sciSubject);
   return S.sciFormulaUnit ? list.filter((f) => f.unit === S.sciFormulaUnit) : list;
+}
+
+function sciQueueLabel(mode, count) {
+  const word = mode === 'review' ? '复习' : (mode === 'study' ? '新学' : '浏览');
+  return `${word} · ${count} 条`;
+}
+
+function openSciQueue(kind, ids, mode, index) {
+  if (!ids.length) { toast('这一组暂时没有卡片'); return; }
+  S.sciQueue = { kind, ids, mode, label: sciQueueLabel(mode, ids.length) };
+  S.sciFlipped = false;
+  if (kind === 'formula') {
+    S.sciSeg = 'formula';
+    S.sciFormulaUnit = '';
+    S.sciFormulaIndex = Math.max(0, index || 0);
+  } else {
+    S.sciSeg = 'point';
+    S.sciIndex = Math.max(0, index || 0);
+  }
+  renderAll();
+}
+
+/* 评完一张：队列里直接出队，卡组里 dueAt 推到明天之后自动离场，都停在原位置看下一张 */
+function sciDropFromQueue(gid) {
+  if (!S.sciQueue) return;
+  const left = S.sciQueue.ids.filter((id) => id !== gid && `f${id}` !== gid);
+  S.sciQueue = left.length
+    ? Object.assign({}, S.sciQueue, { ids: left, label: sciQueueLabel(S.sciQueue.mode, left.length) })
+    : null;
 }
 
 function sciRate(gid, delta) {
@@ -1373,7 +1536,7 @@ function sciBuildQuiz() {
       });
     }
   } else {
-    for (const p of Science.points(S.sciSubject, S.sciGrade)) {
+    for (const p of Science.points(S.sciSubject)) {
       pool.push({
         gid: p.id,
         front: S.sciQuizLang === 'en2zh' ? p.en : p.cn,
@@ -1402,6 +1565,7 @@ function sciBuildQuiz() {
   S.sciAsked.push(answer.gid);
 }
 
+
 function sciAnswer(optionId) {
   if (!S.sciQuiz || S.sciAnswered) return;
   const correct = optionId === S.sciQuiz.answerId;
@@ -1424,21 +1588,53 @@ function sciChips(items, active, act) {
     </div>`;
 }
 
+function sciDeckHead(deck, done, total, percent) {
+  const queue = S.sciQueue;
+  return `
+    <div class="card sci-deck">
+      <div class="card-head" style="margin-bottom:6px">
+        <div>
+          <div class="card-title">${S.sciSubject === 'chem' ? '化学' : '生物'} · 今日背诵</div>
+          <div class="muted" style="margin-top:2px">
+            今日 <b>${done}</b> / ${total} · ${queue ? esc(queue.label) : `到期 ${deck.due.length} · 新卡 ${deck.newIds.length}`}
+          </div>
+        </div>
+        <span class="count">${queue ? `剩余 ${queue.ids.length} 张` : `剩余 ${deck.ids.length} 张`}</span>
+      </div>
+      <div class="bar"><i style="width:${percent}%"></i></div>
+      ${queue ? `<button class="sci-queue-tag" data-act="sci-exit-queue">${esc(queue.label)} ✕</button>` : ''}
+    </div>`;
+}
+
 function sciPointCard() {
+  const deck = sciDeck();
+  const done = sciReviewedToday();
+  const total = deck.ids.length + done;
+  const percent = total ? Math.round((done / total) * 100) : 0;
   const list = sciPoints();
-  if (!list.length) return `<div class="card empty"><span class="ico">📚</span>该章节暂无知识点</div>`;
+
+  if (!list.length) {
+    return `
+      <div class="panel">
+        ${sciDeckHead(deck, done, total, percent)}
+        <div class="card empty">
+          <span class="ico">✓</span>
+          ${done ? '今天的卡片背完了' : '今天没有要背的卡片'}
+          <div class="muted" style="margin-top:6px">
+            ${done ? `今天共背 ${done} 张 · 明天按 1→2→4→7 天间隔自动排卡` : '这个科目已全部固化，想回顾去复习计划里翻'}
+          </div>
+        </div>
+        <button class="btn btn-soft" data-act="sci-seg" data-val="plan">看复习计划 →</button>
+      </div>`;
+  }
+
   sciShowPoint(S.sciIndex);
   const p = list[S.sciIndex];
   const en = S.sciLang === 'en';
   return `
     <div class="panel">
-      ${S.sciSubject === 'bio' ? sciChips([
-        { key: 'all', label: '全部' },
-        { key: '七', label: '七年级' },
-        { key: '八', label: '八年级' }
-      ], S.sciGrade, 'sci-grade') : ''}
-      ${sciChips([{ key: '', label: '全部' }].concat(Science.units(S.sciSubject, S.sciGrade)), S.sciUnit, 'sci-unit')}
-      <div class="card-counter">${S.sciIndex + 1} / ${list.length} · 已学 ${Object.keys(S.sciMemory).length} 条</div>
+      ${sciDeckHead(deck, done, total, percent)}
+      <div class="card-counter">第 ${S.sciIndex + 1} 张 · ${sciStageLabel(S.sciMemory[p.id])}</div>
       <div class="flashcard${S.sciFlipped ? ' is-flipped' : ''}">
         <div class="flashcard-inner sci-inner">
           <div class="face face-front sci-front" data-act="sci-flip">
@@ -1462,9 +1658,10 @@ function sciPointCard() {
         <button class="btn btn-primary" data-act="sci-remember">记住了</button>
       </div>
       <div class="nav-row">
-        <button class="btn btn-ghost btn-sm" data-act="sci-prev">← 上一条</button>
-        <button class="btn btn-ghost btn-sm" data-act="sci-next">下一条 →</button>
+        <button class="btn btn-ghost btn-sm" data-act="sci-prev">← 上一个</button>
+        <button class="btn btn-ghost btn-sm" data-act="sci-next">下一个 →</button>
       </div>
+      <div class="hint" style="text-align:center">评完自动下一张 · 记住了隔更久再背，忘记了明天重来</div>
     </div>`;
 }
 
@@ -1476,8 +1673,9 @@ function sciFormulaCard() {
   const en = S.sciLang === 'en';
   return `
     <div class="panel">
-      ${sciChips([{ key: '', label: '全部' }].concat(Science.formulaUnits(S.sciSubject)), S.sciFormulaUnit, 'sci-funit')}
-      <div class="card-counter">${S.sciFormulaIndex + 1} / ${list.length}</div>
+      ${S.sciQueue ? '' : sciChips([{ key: '', label: '全部' }].concat(Science.formulaUnits(S.sciSubject)), S.sciFormulaUnit, 'sci-funit')}
+      ${S.sciQueue ? `<button class="sci-queue-tag is-formula" data-act="sci-exit-queue">${esc(S.sciQueue.label)} ✕</button>` : ''}
+      <div class="card-counter">第 ${S.sciFormulaIndex + 1} 张 · ${sciStageLabel(S.sciMemory['f' + f.id])}</div>
       <div class="flashcard${S.sciFlipped ? ' is-flipped' : ''}">
         <div class="flashcard-inner sci-inner">
           <div class="face face-front sci-front" data-act="sci-flip">
@@ -1547,6 +1745,69 @@ function sciQuizMarkup() {
     </div>`;
 }
 
+function sciPlanGroup(title, group, list) {
+  if (!list.length) return '';
+  const rows = list.slice(0, 40).map((item) => `
+    <button class="word-row" data-act="sci-plan-open" data-val="${item.kind}|${esc(item.gid)}|${group}">
+      <span class="fr">${esc(item.title)}</span>
+      <span class="cn">${esc(item.sub)}</span>
+      <span class="stage">${esc(item.stageText)}</span>
+    </button>`).join('');
+  return `
+    <details class="group sci-group" ${group === 'due' ? 'open' : ''}>
+      <summary>${title}<span class="count">${list.length}</span></summary>
+      <div class="group-body">${rows}${list.length > 40 ? '<div class="hint" style="padding:8px 10px">仅显示前 40 条，主按钮会过全部</div>' : ''}</div>
+    </details>`;
+}
+
+function sciPlanMarkup() {
+  const plan = sciOpenDay();
+  const buckets = sciPlanBuckets();
+  const deckCount = sciDeck().ids.length;
+  const formulaDue = buckets.due.filter((i) => i.kind === 'formula').length;
+  const totalItems = buckets.due.length + buckets.learning.length
+    + buckets.fresh.length + buckets.graduated.length;
+  const subject = S.sciSubject === 'chem' ? '化学' : '生物';
+
+  return `
+    <div class="panel">
+      <div class="stats stats-4">
+        <div class="stat stat-due"><b>${buckets.due.length}</b><span>今日待复习</span></div>
+        <div class="stat stat-learning"><b>${buckets.learning.length}</b><span>学习中</span></div>
+        <div class="stat stat-new"><b>${buckets.fresh.length}</b><span>新卡片</span></div>
+        <div class="stat stat-grad"><b>${buckets.graduated.length}</b><span>已固化</span></div>
+      </div>
+
+      <button class="btn btn-primary" data-act="sci-start-deck">开始今日背诵${deckCount ? `（${deckCount} 张）` : ''}</button>
+
+      ${formulaDue ? `
+        <button class="card sci-entry" data-act="sci-formula-review">
+          <div class="card-head" style="margin:0">
+            <div style="text-align:left">
+              <div class="card-title">🧪 公式待复习</div>
+              <div class="muted">公式不进每日卡组，单独过一遍</div>
+            </div>
+            <span class="count" style="color:var(--primary);font-weight:800">${formulaDue} 条 →</span>
+          </div>
+        </button>` : ''}
+
+      <div class="card sci-curve">
+        <div class="card-title">📈 智能学习计划</div>
+        <div class="muted" style="margin-top:4px;line-height:1.7">
+          每天 ${plan.dailyNewCount} 条新卡片，间隔 1→2→4→7→15→30→60 天复习；连续 ${plan.streak || 1} 天。
+          当前范围：${subject} · ${Science.points(S.sciSubject).length} 知识点 + ${Science.formulas(S.sciSubject).length} 公式 = ${totalItems} 条。
+        </div>
+      </div>
+
+      ${sciPlanGroup('今日待复习', 'due', buckets.due)}
+      ${sciPlanGroup('学习中', 'learning', buckets.learning)}
+      ${sciPlanGroup('新卡片', 'new', buckets.fresh)}
+      ${sciPlanGroup('已固化 🎓', 'graduated', buckets.graduated)}
+
+      <div class="hint" style="text-align:center">点清单里任一卡片，可直接从这张背起</div>
+    </div>`;
+}
+
 function scienceMarkup() {
   return `
     <div class="sci-head panel">
@@ -1556,13 +1817,16 @@ function scienceMarkup() {
         <button class="pill" data-act="sci-lang">${S.sciLang === 'en' ? 'EN' : '中/英'}</button>
       </div>
       <div class="row-btns">
-        <button class="pill${S.sciSeg === 'point' ? ' is-active' : ''}" data-act="sci-seg" data-val="point">知识点</button>
+        <button class="pill${S.sciSeg === 'point' ? ' is-active' : ''}" data-act="sci-seg" data-val="point">每日背诵</button>
         <button class="pill${S.sciSeg === 'formula' ? ' is-active' : ''}" data-act="sci-seg" data-val="formula">公式</button>
         <button class="pill${S.sciSeg === 'quiz' ? ' is-active' : ''}" data-act="sci-seg" data-val="quiz">自测</button>
+        <button class="pill${S.sciSeg === 'plan' ? ' is-active' : ''}" data-act="sci-seg" data-val="plan">复习计划</button>
       </div>
       <div class="sci-source">教材目录校对版 · 英式术语对齐爱尔兰 Leaving Certificate</div>
     </div>
-    ${S.sciSeg === 'point' ? sciPointCard() : (S.sciSeg === 'formula' ? sciFormulaCard() : sciQuizMarkup())}`;
+    ${S.sciSeg === 'point' ? sciPointCard()
+      : (S.sciSeg === 'formula' ? sciFormulaCard()
+        : (S.sciSeg === 'quiz' ? sciQuizMarkup() : sciPlanMarkup()))}`;
 }
 
 function currentSciGid() {
@@ -1574,9 +1838,14 @@ function currentSciGid() {
   return list.length ? list[S.sciIndex].id : null;
 }
 
-function sciAdvanceCard() {
-  if (S.sciSeg === 'formula') sciShowFormula(S.sciFormulaIndex + 1);
-  else sciShowPoint(S.sciIndex + 1);
+/* 评完一张：队列出队、卡组靠 dueAt 自动离场，都停在原位置看下一张 */
+function sciRateCurrent(delta) {
+  const gid = currentSciGid();
+  if (!gid) return;
+  sciRate(gid, delta);
+  if (S.sciQueue) sciDropFromQueue(gid);
+  else if (S.sciSeg === 'formula') sciShowFormula(S.sciFormulaIndex + 1);
+  S.sciFlipped = false;
   renderAll();
 }
 
@@ -1620,7 +1889,7 @@ const ACTIONS = {
     } else {
       S.sciSubject = val === 'chem' ? 'chem' : 'bio';
       S.sciSeg = 'point';
-      S.sciUnit = '';
+      S.sciQueue = null;
       S.sciFormulaUnit = '';
       S.sciIndex = 0;
       S.sciFormulaIndex = 0;
@@ -1708,8 +1977,7 @@ const ACTIONS = {
 
   'sci-subject'(val) {
     S.sciSubject = val === 'chem' ? 'chem' : 'bio';
-    S.sciGrade = 'all';
-    S.sciUnit = '';
+    S.sciQueue = null;
     S.sciFormulaUnit = '';
     S.sciIndex = 0;
     S.sciFormulaIndex = 0;
@@ -1721,31 +1989,16 @@ const ACTIONS = {
   },
 
   'sci-seg'(val) {
-    S.sciSeg = ['point', 'formula', 'quiz'].includes(val) ? val : 'point';
+    S.sciSeg = ['point', 'formula', 'quiz', 'plan'].includes(val) ? val : 'point';
+    S.sciQueue = null;
     S.sciFlipped = false;
+    S.sciIndex = 0;
     if (S.sciSeg === 'quiz' && !S.sciQuiz) sciBuildQuiz();
     renderAll();
   },
 
   'sci-lang'() {
     S.sciLang = S.sciLang === 'en' ? 'zh' : 'en';
-    renderAll();
-  },
-
-  'sci-grade'(val) {
-    S.sciGrade = val || 'all';
-    S.sciUnit = '';
-    S.sciIndex = 0;
-    S.sciFlipped = false;
-    S.sciAsked = [];
-    S.sciQuiz = null;
-    renderAll();
-  },
-
-  'sci-unit'(val) {
-    S.sciUnit = val;
-    S.sciIndex = 0;
-    S.sciFlipped = false;
     renderAll();
   },
 
@@ -1761,16 +2014,40 @@ const ACTIONS = {
     renderAll();
   },
 
-  'sci-remember'() {
-    const gid = currentSciGid();
-    if (gid) sciRate(gid, 1);
-    sciAdvanceCard();
+  'sci-remember'() { sciRateCurrent(1); },
+
+  'sci-forget'() { sciRateCurrent(-1); },
+
+  'sci-exit-queue'() {
+    S.sciQueue = null;
+    S.sciIndex = 0;
+    S.sciFormulaIndex = 0;
+    S.sciFlipped = false;
+    renderAll();
   },
 
-  'sci-forget'() {
-    const gid = currentSciGid();
-    if (gid) sciRate(gid, -1);
-    sciAdvanceCard();
+  'sci-start-deck'() {
+    S.sciQueue = null;
+    S.sciSeg = 'point';
+    S.sciIndex = 0;
+    S.sciFlipped = false;
+    renderAll();
+  },
+
+  'sci-formula-review'() {
+    const due = sciPlanBuckets().due.filter((i) => i.kind === 'formula').map((i) => i.cardId);
+    if (!due.length) { toast('今天没有待复习的公式 🎉'); return; }
+    openSciQueue('formula', due, 'review', 0);
+  },
+
+  'sci-plan-open'(val) {
+    const [kind, gid, group] = String(val || '').split('|');
+    const buckets = sciPlanBuckets();
+    const list = (buckets[group === 'new' ? 'fresh' : group] || []).filter((i) => i.kind === kind);
+    const ids = list.map((i) => i.cardId);
+    const index = Math.max(0, list.findIndex((i) => i.gid === gid));
+    const mode = group === 'due' ? 'review' : (group === 'new' ? 'study' : 'browse');
+    openSciQueue(kind, ids, mode, index);
   },
 
   'sci-prev'() {
@@ -1901,6 +2178,8 @@ function hydrate() {
   const sciStats = read(KEY.scienceStats, { right: 0, total: 0 }) || {};
   S.sciRight = Number(sciStats.right) || 0;
   S.sciTotal = Number(sciStats.total) || 0;
+  S.sciPlan = read(KEY.sciencePlan, null) || sciFreshPlan();
+  sciOpenDay();
   sciBuildQuiz();
 
   const stored = read(KEY.plan, null);

@@ -7,7 +7,7 @@
 | 标准 PWA（零依赖、零构建） | `pwa/` 静态目录 | Service Worker 预缓存 | ✅ 需 HTTPS / localhost |
 | 单文件版（esbuild 压缩打包） | `dist/bella-french.html`（约 606KB） | 全部资源已内联，文件本身就是离线包 | ❌ 直接打开时无 SW |
 
-与 `miniprogram/`、`ios/` 同源：词库来自 `data/words.json`，科学来自 `data/science.json`（均由 `ios/Tools/export_words.js` 导出）；记忆算法与持久化键名完全一致。第六个 tab「科学」含生物（七/八年级，可按年级 + 章节筛选）/ 化学知识点、公式与自测，走独立的 `science_memory_v1`。
+与 `miniprogram/`、`ios/` 同源：词库来自 `data/words.json`，科学来自 `data/science.json`（均由 `ios/Tools/export_words.js` 导出）；记忆算法与持久化键名完全一致。第六个 tab「科学」有四个分段：每日背诵（今日到期 + 当日额度新卡，评完自动离场）、公式、自测、复习计划（四卡统计 + 清单成队 + 公式待复习入口），走独立的 `science_memory_v1` / `science_plan_v1`，与小程序、iOS 同一套卡组口径。
 
 ## 单文件版：一个 HTML 拷走就用
 

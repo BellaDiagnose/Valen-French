@@ -872,6 +872,57 @@ ul { margin: 0; padding: 0; list-style: none; }
   margin-bottom: 4px;
 }
 
+/* 每日卡组 + 计划清单 */
+.sci-deck { padding: 14px 16px; }
+.sci-deck .muted b {
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.sci-deck .bar { margin-top: 10px; }
+.sci-deck .count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sub-light);
+  white-space: nowrap;
+}
+.sci-queue-tag {
+  align-self: flex-start;
+  margin-top: 10px;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: inherit;
+  color: #fff;
+  background: var(--primary);
+}
+.sci-queue-tag.is-formula { background: #b07a24; }
+.stats-4 { grid-template-columns: repeat(4, 1fr); }
+.stats-4 .stat { padding: 12px 4px; }
+.stats-4 .stat b { font-size: 20px; }
+.stats-4 .stat span { font-size: 10.5px; }
+.stat-grad { background: rgba(46, 158, 107, .1); }
+.stat-grad b { color: #2e9e6b; }
+.sci-entry {
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+.sci-curve { padding: 14px 16px; }
+.sci-curve .muted { font-size: 11.5px; }
+.sci-group .word-row .cn {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @media (min-width: 600px) {
   .shell { padding-left: 22px; padding-right: 22px; }
   .word-fr { font-size: 40px; }

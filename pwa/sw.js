@@ -21,7 +21,7 @@
  * 因此更新 App Shell 不会丢进度；离线状态下写入同样安全。
  * ========================================================================= */
 
-const VERSION = 'v1.4.1';
+const VERSION = 'v1.5.0';
 const SHELL_CACHE = `bella-shell-${VERSION}`;
 const DATA_CACHE = `bella-data-${VERSION}`;
 const KEEP = [SHELL_CACHE, DATA_CACHE];
