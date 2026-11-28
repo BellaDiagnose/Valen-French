@@ -14,14 +14,14 @@
 
   <!-- ========== 模块一：知识点卡 ========== -->
   <view wx:if="{{activeTab === 'point'}}" class="panel panel-fill">
-    <scroll-view wx:if="{{subject === 'bio'}}" class="chip-row grade-row" scroll-x>
+    <scroll-view wx:if="{{subject === 'bio' && !pointQueue}}" class="chip-row grade-row" scroll-x>
       <view
         wx:for="{{gradeOptions}}" wx:key="key"
         class="chip {{gradeFilter === item.key ? 'active' : ''}}"
         data-key="{{item.key}}" bindtap="onGradeFilter"
       >{{item.label}}</view>
     </scroll-view>
-    <scroll-view class="chip-row" scroll-x>
+    <scroll-view wx:if="{{!pointQueue}}" class="chip-row" scroll-x>
       <view
         wx:for="{{pointUnits}}" wx:key="key"
         class="chip {{unitFilter === item.key ? 'active' : ''}}"
@@ -30,6 +30,7 @@
     </scroll-view>
 
     <view wx:if="{{point}}" class="card-meta">
+      <view wx:if="{{pointQueueLabel}}" class="queue-tag {{pointQueueTone === 'study' ? 'is-study' : ''}}" data-kind="point" bindtap="exitQueue">{{pointQueueLabel}} ✕</view>
       <view class="card-counter">{{pointIndex + 1}} / {{pointIds.length}}</view>
       <view class="stage-pill">{{pointStageLabel}}</view>
     </view>
@@ -90,7 +91,7 @@
 
   <!-- ========== 模块二：公式卡 ========== -->
   <view wx:if="{{activeTab === 'formula'}}" class="panel panel-fill">
-    <scroll-view class="chip-row" scroll-x>
+    <scroll-view wx:if="{{!formulaQueue}}" class="chip-row" scroll-x>
       <view
         wx:for="{{formulaUnits}}" wx:key="key"
         class="chip {{formulaUnitFilter === item.key ? 'active' : ''}}"
@@ -99,6 +100,7 @@
     </scroll-view>
 
     <view wx:if="{{formula}}" class="card-meta">
+      <view wx:if="{{formulaQueueLabel}}" class="queue-tag {{formulaQueueTone === 'study' ? 'is-study' : ''}}" data-kind="formula" bindtap="exitQueue">{{formulaQueueLabel}} ✕</view>
       <view class="card-counter">{{formulaIndex + 1}} / {{formulaIds.length}}</view>
       <view class="stage-pill">{{formulaStageLabel}}</view>
     </view>
@@ -194,6 +196,72 @@
       {{quizCorrect ? '答对了 ✓' : '正确答案：' + quiz.answer.back}}
     </view>
     <view wx:if="{{quizAnswered}}" class="btn-primary quiz-next" bindtap="nextQuiz">下一题 →</view>
+  </view>
+
+  <!-- ========== 模块四：复习计划 ========== -->
+  <view wx:if="{{activeTab === 'plan'}}" class="panel plan-panel">
+    <view class="plan-summary">
+      <view class="stat-card stat-due"><view class="stat-num">{{planDueCount}}</view><view class="stat-label">今日待复习</view></view>
+      <view class="stat-card stat-learning"><view class="stat-num">{{planLearningCount}}</view><view class="stat-label">学习中</view></view>
+      <view class="stat-card stat-new"><view class="stat-num">{{planNewCount}}</view><view class="stat-label">新卡片</view></view>
+      <view class="stat-card stat-grad"><view class="stat-num">{{planGraduatedCount}}</view><view class="stat-label">已固化</view></view>
+    </view>
+
+    <view class="plan-actions">
+      <view class="btn-primary" bindtap="startReview">开始今日复习{{planDueCount ? '（' + planDueCount + '）' : ''}}</view>
+      <view class="btn-outline" bindtap="startStudy">学新卡片{{planNewCount ? '（' + planNewCount + '）' : ''}}</view>
+    </view>
+
+    <view class="curve-note">
+      <view class="curve-title">📈 智能学习计划</view>
+      <view class="curve-desc">每天 {{planDailyCount}} 条新卡片，间隔 1→2→4→7→15→30→60 天复习；连续 {{planStreak}} 天。当前范围：{{planSubjectLabel}} · {{planPointCount}} 知识点 + {{planFormulaCount}} 公式 = {{planItemCount}} 条。</view>
+    </view>
+
+    <view wx:if="{{planDueCount > 0}}" class="word-group">
+      <view class="group-title group-title-due">今日待复习 · {{planDueCount}}</view>
+      <view
+        wx:for="{{planDueItems}}" wx:key="gid" class="word-row"
+        data-group="due" data-kind="{{item.kind}}" data-gid="{{item.gid}}" bindtap="onPlanItemTap"
+      >
+        <view class="row-main"><text class="row-fr">{{item.title}}</text><text class="row-cn">{{item.sub}}</text></view>
+        <view class="row-stage">{{item.stageText}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{planLearningCount > 0}}" class="word-group">
+      <view class="group-title group-title-learning">学习中 · {{planLearningCount}}</view>
+      <view
+        wx:for="{{planLearningItems}}" wx:key="gid" class="word-row"
+        data-group="learning" data-kind="{{item.kind}}" data-gid="{{item.gid}}" bindtap="onPlanItemTap"
+      >
+        <view class="row-main"><text class="row-fr">{{item.title}}</text><text class="row-cn">{{item.sub}}</text></view>
+        <view class="row-stage">{{item.stageText}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{planNewCount > 0}}" class="word-group">
+      <view class="group-title group-title-new">新卡片 · {{planNewCount}}</view>
+      <view
+        wx:for="{{planNewItems}}" wx:key="gid" class="word-row"
+        data-group="new" data-kind="{{item.kind}}" data-gid="{{item.gid}}" bindtap="onPlanItemTap"
+      >
+        <view class="row-main"><text class="row-fr">{{item.title}}</text><text class="row-cn">{{item.sub}}</text></view>
+        <view class="row-stage">{{item.stageText}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{planGraduatedCount > 0}}" class="word-group">
+      <view class="group-title group-title-grad">已固化 🎓 · {{planGraduatedCount}}</view>
+      <view
+        wx:for="{{planGraduatedItems}}" wx:key="gid" class="word-row"
+        data-group="graduated" data-kind="{{item.kind}}" data-gid="{{item.gid}}" bindtap="onPlanItemTap"
+      >
+        <view class="row-main"><text class="row-fr">{{item.title}}</text><text class="row-cn">{{item.sub}}</text></view>
+        <view class="row-stage">{{item.stageText}}</view>
+      </view>
+    </view>
+
+    <view class="plan-foot" bindtap="browseAllCards">浏览全部卡片 →</view>
   </view>
 
 </view>

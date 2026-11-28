@@ -1,5 +1,6 @@
 /* pages/science/science.wxss —— 与法语页一致的爱尔兰绿医疗主题 */
 @import "../common/float-nav.wxss";
+@import "../common/plan-panel.wxss";
 
 .page {
   min-height: 100vh;
@@ -539,3 +540,47 @@
   box-shadow: 0 6rpx 16rpx rgba(15, 138, 90, 0.22);
 }
 .quiz-next { margin-top: 24rpx; }
+
+/* ============ 复习计划（样式见 common/plan-panel.wxss） ============ */
+.btn-outline {
+  text-align: center;
+  padding: 24rpx 0;
+  border-radius: 18rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #0f8a5a;
+  background: #e4f1e9;
+  border: 2rpx solid #cfe7d8;
+  box-sizing: border-box;
+}
+/* 科学条目是中英双语（中文术语 + 英文 / 公式），竖排避免长句挤压阶段标签 */
+.plan-panel .row-main {
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2rpx;
+}
+.plan-panel .row-fr,
+.plan-panel .row-cn {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.plan-panel .row-cn {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.plan-panel .row-stage {
+  margin-left: 16rpx;
+}
+/* 队列模式标签：从计划进入卡片时提示「复习 / 新学 · N 条」 */
+.queue-tag {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #ffffff;
+  background: #0f8a5a;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+}
+.queue-tag.is-study { background: #d6a13c; }

@@ -65,7 +65,8 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     tabs: [
       { key: 'point', label: '知识点' },
       { key: 'formula', label: '公式' },
-      { key: 'quiz', label: '自测' }
+      { key: 'quiz', label: '自测' },
+      { key: 'plan', label: '复习计划' }
     ],
     activeTab: 'point',
 
@@ -75,6 +76,9 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     pointUnits: [],
     unitFilter: 0,          // 0 = 全部
     pointIds: [],
+    pointQueue: null,        // 非空 = 复习/新学队列，忽略筛选
+    pointQueueLabel: '',
+    pointQueueTone: '',
     pointIndex: 0,
     point: null,
     pointFlipped: false,
@@ -90,6 +94,9 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     formulaUnits: [],
     formulaUnitFilter: 0,
     formulaIds: [],
+    formulaQueue: null,
+    formulaQueueLabel: '',
+    formulaQueueTone: '',
     formulaIndex: 0,
     formula: null,
     formulaFlipped: false,
@@ -108,6 +115,12 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     quizTotal: 0,
     quizRight: 0,
     askedIds: [],
+
+    // —— 复习计划 ——
+    planDueItems: [], planLearningItems: [], planNewItems: [], planGraduatedItems: [],
+    planDueCount: 0, planLearningCount: 0, planNewCount: 0, planGraduatedCount: 0,
+    planDailyCount: 20, planStreak: 0,
+    planItemCount: 0, planPointCount: 0, planFormulaCount: 0, planSubjectLabel: '生物',
 
     // —— 全局 ——
     memory: {},
@@ -153,7 +166,10 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     const state = S.openState(plan, Date.now());
     plan = S.buildDailyPlan(plan, state, this.allItems(), memory);
     wx.setStorageSync(PLAN_KEY, plan);
-    this.setData({ memory, plan }, () => this.updateProgress());
+    this.setData({ memory, plan }, () => {
+      this.updateProgress();
+      if (this.data.activeTab === 'plan') this.refreshPlan();
+    });
   },
 
   // ==================== tab 切换 ====================
@@ -161,8 +177,11 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     const key = e.currentTarget.dataset.key;
     if (key === this.data.activeTab) return;
     const patch = { activeTab: key };
+    // 计划页顶部是统计卡和主按钮，球停到右下角；其余 tab 回到右上角
+    FLOAT_NAV.dockFloat(this, key === 'plan' ? 'bottom' : 'top');
     this.setData(patch, () => {
       if (key === 'quiz' && !this.data.quiz) this.buildQuiz();
+      if (key === 'plan') this.refreshPlan();
     });
   },
 
@@ -186,14 +205,22 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       activeTab: 'point',
       pointIds: bank.points.map((p) => p.gid),
       pointIndex: 0,
+      pointQueue: null,
+      pointQueueLabel: '',
+      pointQueueTone: '',
       formulaIds: formulasOf(subject).map((f) => f.id),
       formulaIndex: 0,
+      formulaQueue: null,
+      formulaQueueLabel: '',
+      formulaQueueTone: '',
       quiz: null,
       askedIds: []
     }, () => {
+      FLOAT_NAV.dockFloat(this, 'top');
       this.showPoint(0);
       this.showFormula(0);
       this.updateProgress();
+      this.refreshPlan();
       this.syncFloatNav();
     });
   },
@@ -268,6 +295,9 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       gradeFilter: grade,
       pointUnits,
       unitFilter: 0,
+      pointQueue: null,
+      pointQueueLabel: '',
+      pointQueueTone: '',
       quiz: null,
       askedIds: []
     }, () => this.showPoint(0));
@@ -275,10 +305,11 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
 
   onUnitFilter(e) {
     const key = e.currentTarget.dataset.key;
-    this.setData({ unitFilter: key }, () => this.showPoint(0));
+    this.setData({ unitFilter: key, pointQueue: null, pointQueueLabel: '', pointQueueTone: '' }, () => this.showPoint(0));
   },
 
   visiblePointIds() {
+    if (this.data.pointQueue && this.data.pointQueue.length) return this.data.pointQueue;
     const bank = BANK[this.data.subject];
     const filter = this.data.unitFilter;
     const grade = this.data.gradeFilter;
@@ -342,10 +373,11 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   // ==================== 公式卡 ====================
   onFormulaUnitFilter(e) {
     const key = e.currentTarget.dataset.key;
-    this.setData({ formulaUnitFilter: key }, () => this.showFormula(0));
+    this.setData({ formulaUnitFilter: key, formulaQueue: null, formulaQueueLabel: '', formulaQueueTone: '' }, () => this.showFormula(0));
   },
 
   visibleFormulaIds() {
+    if (this.data.formulaQueue && this.data.formulaQueue.length) return this.data.formulaQueue;
     return formulasOf(this.data.subject)
       .filter((f) => !this.data.formulaUnitFilter || f.unit === this.data.formulaUnitFilter)
       .map((f) => f.id);
@@ -400,6 +432,150 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
         icon: 'none'
       });
     });
+  },
+
+  // ==================== 复习计划 ====================
+  // 计划按「当前科目」统计：该科目全部知识点 + 该科目公式
+  subjectItems() {
+    const subject = this.data.subject;
+    // gid = 记忆键（公式带 f 前缀）；cardId = 卡片页用的 id（公式不带前缀）
+    const points = BANK[subject].points.map((p) => ({
+      gid: p.gid, cardId: p.gid, kind: 'point', title: p.cn, sub: p.en
+    }));
+    const formulas = formulasOf(subject).map((f) => ({
+      gid: 'f' + f.id, cardId: f.id, kind: 'formula', title: f.cn, sub: f.expr
+    }));
+    return points.concat(formulas);
+  },
+
+  refreshPlan() {
+    const items = this.subjectItems();
+    const memory = this.data.memory;
+    const now = Date.now();
+    const due = [], learning = [], fresh = [], graduated = [];
+    items.forEach((it) => {
+      const m = memory[it.gid];
+      if (!m) { fresh.push(Object.assign({}, it, { stageText: '未开始' })); return; }
+      if (m.stage >= S.GRADUATED) {
+        graduated.push(Object.assign({}, it, { stageText: '完成全部间隔' }));
+        return;
+      }
+      if (m.dueAt && m.dueAt <= now) {
+        due.push(Object.assign({}, it, { stageText: '已到期', dueAt: m.dueAt }));
+        return;
+      }
+      learning.push(Object.assign({}, it, {
+        stageText: `第 ${m.stage + 1} 档 · ${this.dueDate(m.dueAt)}`
+      }));
+    });
+    due.sort((a, b) => (a.dueAt || 0) - (b.dueAt || 0));
+    const plan = this.data.plan || {};
+    const subject = this.data.subject;
+    this.setData({
+      planDueItems: due,
+      planLearningItems: learning,
+      planNewItems: fresh,
+      planGraduatedItems: graduated,
+      planDueCount: due.length,
+      planLearningCount: learning.length,
+      planNewCount: fresh.length,
+      planGraduatedCount: graduated.length,
+      planDailyCount: plan.dailyNewCount || S.DEFAULT_DAILY,
+      planStreak: plan.streak || 0,
+      planItemCount: items.length,
+      planPointCount: BANK[subject].points.length,
+      planFormulaCount: formulasOf(subject).length,
+      planSubjectLabel: subject === 'chem' ? '化学' : '生物'
+    });
+  },
+
+  // 打开一组卡片队列：mode = review（待复习）/ study（新学）/ browse（学习中、已固化）
+  openQueue(kind, ids, mode, start) {
+    const idx = Math.max(0, start || 0);
+    FLOAT_NAV.dockFloat(this, 'top');
+    const WORDS = { review: '复习', study: '新学', browse: '浏览' };
+    const label = mode ? `${WORDS[mode] || '浏览'} · ${ids.length} 条` : '';
+    const tone = mode === 'study' ? 'study' : (mode === 'review' ? 'review' : '');
+    if (kind === 'point') {
+      this.setData({
+        activeTab: 'point', pointQueue: ids, pointQueueLabel: label, pointQueueTone: tone
+      }, () => this.showPoint(idx));
+    } else {
+      this.setData({
+        activeTab: 'formula', formulaQueue: ids, formulaQueueLabel: label, formulaQueueTone: tone
+      }, () => this.showFormula(idx));
+    }
+  },
+
+  // 待复习先走知识点，再看公式；两者都有时提示公式还剩多少
+  startReview() {
+    const points = this.data.planDueItems.filter((i) => i.kind === 'point').map((i) => i.cardId);
+    const formulas = this.data.planDueItems.filter((i) => i.kind === 'formula').map((i) => i.cardId);
+    if (!points.length && !formulas.length) {
+      wx.showToast({ title: '今天没有待复习的内容 🎉', icon: 'none' });
+      return;
+    }
+    if (points.length) {
+      this.openQueue('point', points, 'review', 0);
+      if (formulas.length) {
+        wx.showToast({ title: `公式还有 ${formulas.length} 条待复习`, icon: 'none' });
+      }
+      return;
+    }
+    this.openQueue('formula', formulas, 'review', 0);
+  },
+
+  // 新卡片按今日额度取前 N 条（默认 20，动态调节后 10~30）
+  startStudy() {
+    const fresh = this.data.planNewItems;
+    if (!fresh.length) {
+      wx.showToast({ title: '新卡片已经学完了', icon: 'none' });
+      return;
+    }
+    const quota = this.data.planDailyCount || S.DEFAULT_DAILY;
+    const points = fresh.filter((i) => i.kind === 'point').map((i) => i.cardId).slice(0, quota);
+    if (points.length) {
+      this.openQueue('point', points, 'study', 0);
+      return;
+    }
+    const formulas = fresh.filter((i) => i.kind === 'formula').map((i) => i.cardId).slice(0, quota);
+    this.openQueue('formula', formulas, 'study', 0);
+  },
+
+  // 点清单里的某一条：把该组作为队列，并从这条开始
+  onPlanItemTap(e) {
+    const { gid, kind, group } = e.currentTarget.dataset;
+    const map = {
+      due: 'planDueItems', learning: 'planLearningItems',
+      new: 'planNewItems', graduated: 'planGraduatedItems'
+    };
+    // 同一组里混着知识点和公式，队列只取同类型，否则 showFormula 拿不到知识点 id
+    const list = (this.data[map[group]] || []).filter((i) => i.kind === kind);
+    const ids = list.map((i) => i.cardId);
+    const idx = Math.max(0, list.findIndex((i) => i.gid === gid));
+    const mode = group === 'due' ? 'review' : (group === 'new' ? 'study' : 'browse');
+    this.openQueue(kind, ids, mode, idx);
+  },
+
+  // 点队列标签退出，回到按筛选浏览
+  exitQueue(e) {
+    const kind = e.currentTarget.dataset.kind;
+    if (kind === 'formula') {
+      this.setData({ formulaQueue: null, formulaQueueLabel: '', formulaQueueTone: '' },
+        () => this.showFormula(0));
+    } else {
+      this.setData({ pointQueue: null, pointQueueLabel: '', pointQueueTone: '' },
+        () => this.showPoint(0));
+    }
+  },
+
+  browseAllCards() {
+    FLOAT_NAV.dockFloat(this, 'top');
+    this.setData({
+      activeTab: 'point',
+      pointQueue: null, pointQueueLabel: '', pointQueueTone: '',
+      unitFilter: 0
+    }, () => this.showPoint(0));
   },
 
   // ==================== 自测 ====================

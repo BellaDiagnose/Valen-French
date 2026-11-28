@@ -39,6 +39,32 @@ const BALL_H = 290;
 const OPEN_W = 380;
 const OPEN_H = 580;
 
+// 顶部停靠：卡片页右上角的空白处（默认）
+function dockTop(ctx) {
+  try {
+    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    ctx.setData({ floatX: Math.max(8, info.windowWidth - 120), floatY: 120 });
+  } catch (e) { /* 保持原位 */ }
+}
+
+// 底部停靠：计划 / 长列表页，球落到右下角，顶部整块留给统计卡与主按钮
+function dockBottom(ctx) {
+  try {
+    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    const rpx = info.windowWidth / 750;
+    ctx.setData({
+      floatX: Math.max(8, info.windowWidth - 120),
+      floatY: Math.max(8, Math.round(info.windowHeight - BALL_H * rpx - 24))
+    });
+  } catch (e) { /* 保持原位 */ }
+}
+
+// 切 tab 时按页面需要停靠；用户手动拖过就不再自动挪（_floatMoved）
+function dockFloat(ctx, where) {
+  if (ctx._floatMoved || ctx.data.floatFlipped) return;
+  if (where === 'bottom') dockBottom(ctx); else dockTop(ctx);
+}
+
 function initFloatPosition(ctx) {
   try {
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
@@ -89,6 +115,7 @@ const methods = {
   },
 
   onFloatTouchEnd() {
+    if (this._floatDrag && this._floatDrag.moved) this._floatMoved = true;
     if (this._floatDrag && !this._floatDrag.moved) {
       const next = !this.data.floatFlipped;
       const patch = { floatFlipped: next };
@@ -132,4 +159,4 @@ const methods = {
   }
 };
 
-module.exports = { NAV_ITEMS, navData, syncNavData, initFloatPosition, methods };
+module.exports = { NAV_ITEMS, navData, syncNavData, initFloatPosition, dockFloat, dockTop, dockBottom, methods };

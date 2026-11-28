@@ -434,6 +434,8 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       wx.showToast({ title: '请先完成强制自测', icon: 'none' });
       return;
     }
+    // 计划页顶部是统计卡和主按钮，球停到右下角；其余 tab 回到右上角
+    FLOAT_NAV.dockFloat(this, key === 'plan' ? 'bottom' : 'top');
     this.setData({ activeTab: key });
     if (key === 'quiz' && !this.data.quiz) this.buildQuiz();
   },

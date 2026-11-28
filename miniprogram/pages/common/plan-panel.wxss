@@ -1,0 +1,110 @@
+/* pages/common/plan-panel.wxss —— 复习计划面板（法语气 / 科学页共用）
+   结构：四张统计卡 → 两个入口 → 计划说明 → 四组可点清单 → 底部链接 */
+
+.plan-summary {
+  display: flex;
+  gap: 14rpx;
+  margin-bottom: 28rpx;
+}
+.stat-card {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 28rpx 8rpx;
+  text-align: center;
+  box-shadow: 0 6rpx 20rpx rgba(16, 38, 29, 0.05);
+}
+.stat-num {
+  font-size: 52rpx;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.stat-label {
+  font-size: 22rpx;
+  color: #6b8075;
+  margin-top: 10rpx;
+}
+.stat-due .stat-num { color: #e08a3c; }
+.stat-learning .stat-num { color: #0f8a5a; }
+.stat-new .stat-num { color: #6b8075; }
+.stat-grad .stat-num { color: #1f9d63; }
+
+.plan-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+}
+.plan-actions .btn-primary,
+.plan-actions .btn-outline {
+  flex: 1;
+  margin-top: 0;
+}
+
+.curve-note {
+  background: #e4f1e9;
+  border-radius: 18rpx;
+  padding: 24rpx 28rpx;
+  margin-bottom: 32rpx;
+}
+.curve-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #0f8a5a;
+  margin-bottom: 10rpx;
+}
+.curve-desc {
+  font-size: 24rpx;
+  color: #445d52;
+  line-height: 1.6;
+}
+
+.word-group {
+  margin-bottom: 32rpx;
+}
+.group-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  padding: 16rpx 24rpx;
+  border-radius: 14rpx;
+  margin-bottom: 14rpx;
+}
+.group-title-due { background: #fff2e6; color: #c96f24; }
+.group-title-learning { background: #e4f1e9; color: #0f8a5a; }
+.group-title-new { background: #edf5f0; color: #53675d; }
+.group-title-grad { background: #e7f7ef; color: #147a4c; }
+
+.word-row {
+  background: #ffffff;
+  border-radius: 14rpx;
+  padding: 22rpx 28rpx;
+  margin-bottom: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4rpx 14rpx rgba(16, 38, 29, 0.04);
+}
+.row-main {
+  display: flex;
+  align-items: baseline;
+  gap: 18rpx;
+}
+.row-fr {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #14352a;
+}
+.row-cn {
+  font-size: 24rpx;
+  color: #6b8075;
+}
+.row-stage {
+  font-size: 22rpx;
+  color: #8ea196;
+  white-space: nowrap;
+}
+.plan-foot {
+  text-align: center;
+  font-size: 26rpx;
+  color: #0f8a5a;
+  padding: 24rpx 0 8rpx;
+}
