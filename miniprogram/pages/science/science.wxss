@@ -7,7 +7,11 @@
   padding: 0 30rpx 60rpx;
   box-sizing: border-box;
   color: #10261d;
+  /* 卡片页要「卡片吃满、按钮贴底」，靠 flex 列撑满一屏 */
+  display: flex;
+  flex-direction: column;
 }
+.page > .panel { flex-shrink: 0; }
 
 /* ============ Tab ============ */
 .tabs {
@@ -112,12 +116,25 @@
 }
 
 /* ============ 翻卡 ============ */
+/* 知识点 / 公式面板：卡片 flex 吃掉剩余高度，评分按钮固定在底部 */
+.panel-fill {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.panel-fill .flashcard {
+  flex: 1 1 auto;
+  min-height: 520rpx;
+  margin-bottom: 24rpx;
+}
+.panel-fill .actions {
+  margin-top: auto;
+}
 .flashcard {
   width: 100%;
-  height: 780rpx;
   position: relative;
   perspective: 1600rpx;
-  margin-bottom: 28rpx;
 }
 .face {
   position: absolute;
@@ -324,29 +341,32 @@
   margin-top: 4rpx;
 }
 
-/* ============ 操作按钮 ============ */
+/* ============ 操作按钮（与法语页同一套尺寸） ============ */
 .actions {
   display: flex;
-  gap: 12rpx;
+  gap: 16rpx;
   align-items: center;
 }
 .btn-nav {
-  flex: 0 0 auto;
-  padding: 20rpx 18rpx;
+  flex: 1;
+  padding: 24rpx 10rpx;
   text-align: center;
-  font-size: 24rpx;
+  font-size: 28rpx;
   font-weight: 600;
-  color: #53675d;
-  background: #e6f1ea;
-  border-radius: 16rpx;
+  color: #445d52;
+  background: #ffffff;
+  border: 2rpx solid #e2efe8;
+  border-radius: 18rpx;
+  box-sizing: border-box;
 }
 .btn-rate {
   flex: 1;
-  padding: 22rpx 0;
+  padding: 24rpx 6rpx;
   text-align: center;
-  font-size: 27rpx;
-  font-weight: 700;
-  border-radius: 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  border-radius: 18rpx;
+  box-sizing: border-box;
 }
 .btn-remember {
   color: #ffffff;

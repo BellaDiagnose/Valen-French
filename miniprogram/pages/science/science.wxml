@@ -13,7 +13,7 @@
   </view>
 
   <!-- ========== 模块一：知识点卡 ========== -->
-  <view wx:if="{{activeTab === 'point'}}" class="panel">
+  <view wx:if="{{activeTab === 'point'}}" class="panel panel-fill">
     <scroll-view wx:if="{{subject === 'bio'}}" class="chip-row grade-row" scroll-x>
       <view
         wx:for="{{gradeOptions}}" wx:key="key"
@@ -89,7 +89,7 @@
   </view>
 
   <!-- ========== 模块二：公式卡 ========== -->
-  <view wx:if="{{activeTab === 'formula'}}" class="panel">
+  <view wx:if="{{activeTab === 'formula'}}" class="panel panel-fill">
     <scroll-view class="chip-row" scroll-x>
       <view
         wx:for="{{formulaUnits}}" wx:key="key"
