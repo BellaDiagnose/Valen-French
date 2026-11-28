@@ -75,18 +75,18 @@ struct NavRingButton: View {
                             style: StrokeStyle(lineWidth: 4, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
-                    VStack(spacing: -1) {
+                    VStack(spacing: -2) {
                         Text("\(value)")
-                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                            .font(.system(size: 13, weight: .heavy, design: .rounded))
                             .foregroundColor(Theme.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
                         Text(unit)
-                            .font(.system(size: 7, weight: .semibold))
+                            .font(.system(size: 8, weight: .semibold))
                             .foregroundColor(Theme.sub)
                     }
                 }
-                .frame(width: 34, height: 34)
+                .frame(width: 36, height: 36)
 
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .bold))
