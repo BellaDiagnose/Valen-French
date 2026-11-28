@@ -12,6 +12,9 @@ on:
     tags:
       - 'ios-v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build ValenFrench.app -> ipa
@@ -44,7 +47,7 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             SYMROOT="$PWD/build" \
             OBJROOT="$PWD/build/obj" \
-            build
+            build 2>&1 | tee ../xcodebuild.log
 
       - name: Package ipa
         working-directory: ios
@@ -77,3 +80,17 @@ jobs:
           path: ios/ValenFrench-unsigned.ipa
           if-no-files-found: error
           retention-days: 30
+
+      # 公开仓库的 Release 附件可匿名下载，不需要 token —— 本机用 curl 直接取回 ipa 交给 xtool 签名安装。
+      # 构建日志一并附上：失败时能直接读到 xcodebuild 报错原文。
+      - name: Publish release assets
+        if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'ios-build' }}
+          name: BELLA 助手 iOS 侧载包
+          prerelease: true
+          fail_on_unmatched_files: false
+          files: |
+            ios/ValenFrench-unsigned.ipa
+            xcodebuild.log
