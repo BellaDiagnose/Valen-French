@@ -120,11 +120,7 @@ struct ScienceView: View {
 
             deckHead
 
-            if let point = store.currentPoint {
-                cardMeta(counter: "剩余 \(store.deckIDs.count) 张",
-                         stage: store.stageLabel(point.id),
-                         queue: store.queueKind == .point ? store.queueLabel : nil)
-
+            if store.currentPoint != nil {
                 flashCard(front: pointFront, back: pointBack)
 
                 actionRow(isFormula: false)
@@ -175,43 +171,105 @@ struct ScienceView: View {
         return unit.isEmpty ? "\(store.subject.label) · 今日背诵" : "\(store.subject.label) · \(unit)"
     }
 
-    /// 今日卡组头（小程序是裸的文字 + 细进度条，不是白卡）
+    /// 今日卡组头：标题 + 今日进度、全宽进度条、到期/新卡 + 阶段，三级信息一列到底
+    /// （小程序 pages/science 的 .deck-head 同构）
     private var deckHead: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(deckTitle)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(Color(hex: 0x14352A))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text("今日")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(Color(hex: 0x6B8075))
-                Text("\(store.reviewedToday)")
-                    .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundColor(Theme.primary)
-                Text("/ \(store.deckTotal)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: 0x8EA196))
-                Text("·")
-                    .foregroundColor(Color(hex: 0xC3D4C9))
-                    .padding(.horizontal, 3)
-                Text(store.queueKind == .point
-                     ? "\(store.queueLabel) \(store.queueIDs.count) 条"
-                     : "到期 \(store.deckDue.count) · 新卡 \(store.deckFresh.count)")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(Color(hex: 0x6B8075))
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(deckTitle)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(hex: 0x14352A))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                Spacer(minLength: 0)
+                    .layoutPriority(1)
+
+                Spacer(minLength: 4)
+
+                if store.deckTotal > 0 { deckFraction }
             }
 
-            ProgressTrack(fraction: store.deckProgress)
-                .frame(width: 156)
-                .padding(.top, 6)
+            if store.deckTotal > 0 {
+                ProgressTrack(fraction: store.deckProgress,
+                              tint: Color(hex: 0xD5E8DD),
+                              height: 6)
+                    .padding(.top, 7)
+            }
+
+            HStack(spacing: 10) {
+                deckQueueTag
+                Spacer(minLength: 0)
+                deckStagePill
+            }
+            .padding(.top, 7)
         }
-        .padding(.bottom, 2)
+        .padding(.bottom, 4)
+    }
+
+    /// 右上角今日进度：今日 N / 总数
+    private var deckFraction: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            Text("今日")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(Color(hex: 0x7D9187))
+                .padding(.trailing, 3)
+            Text("\(store.reviewedToday)")
+                .font(.system(size: 17, weight: .heavy, design: .rounded))
+                .foregroundColor(Theme.primary)
+            Text("/\(store.deckTotal)")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(Color(hex: 0x8EA196))
+        }
+    }
+
+    /// 左下：队列中显示可点的「浏览 · N 条 ✕」，否则显示到期/新卡
+    @ViewBuilder
+    private var deckQueueTag: some View {
+        if store.queueKind == .point {
+            let tone: Color = store.queueMode == .study ? Color(hex: 0xD6A13C) : Theme.primary
+            Button { store.exitQueue() } label: {
+                Text("\(store.queueLabel) ✕")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(tone))
+            }
+            .buttonStyle(.plain)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text("到期")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: 0x7D9187))
+                Text("\(store.deckDue.count)")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(hex: 0x14352A))
+                Text("·")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: 0xC3D4C9))
+                    .padding(.horizontal, 4)
+                Text("新卡")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: 0x7D9187))
+                Text("\(store.deckFresh.count)")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(hex: 0x14352A))
+            }
+        }
+    }
+
+    /// 右下：当前卡的记忆阶段
+    @ViewBuilder
+    private var deckStagePill: some View {
+        if let point = store.currentPoint {
+            Text(store.stageLabel(point.id))
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(Color(hex: 0x0D7A50))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Theme.chip))
+        }
     }
 
     private func cardMeta(counter: String, stage: String, queue: String?) -> some View {
@@ -1066,11 +1124,13 @@ struct ScienceView: View {
 
 private struct ProgressTrack: View {
     let fraction: Double
+    var tint: Color = Theme.track
+    var height: CGFloat = 4
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(Theme.track)
+                Capsule().fill(tint)
                 Capsule()
                     .fill(LinearGradient(colors: [Theme.primarySoft, Theme.primary],
                                          startPoint: .leading,
@@ -1079,6 +1139,6 @@ private struct ProgressTrack: View {
                     .animation(.easeOut(duration: 0.45), value: fraction)
             }
         }
-        .frame(height: 4)
+        .frame(height: height)
     }
 }

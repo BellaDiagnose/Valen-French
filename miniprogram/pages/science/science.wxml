@@ -28,24 +28,26 @@
     </scroll-view>
 
     <view class="deck-head">
-      <view class="deck-title">{{subject === 'bio' ? '生物' : '化学'}} · {{pointUnitTitle || '今日背诵'}}</view>
-      <view class="deck-sub">
-        <text class="deck-label">今日</text>
-        <text class="deck-done-num">{{pointTodayDone}}</text>
-        <text class="deck-total-num">/ {{pointTodayTotal}}</text>
-        <text class="deck-sep">·</text>
-        <text wx:if="{{pointQueue}}">{{pointQueueLabel}}</text>
-        <text wx:else>到期 {{pointDeckDue}} · 新卡 {{pointDeckNew}}</text>
+      <view class="deck-top">
+        <view class="deck-title">{{subject === 'bio' ? '生物' : '化学'}} · {{pointUnitTitle || '今日背诵'}}</view>
+        <view wx:if="{{pointTodayTotal}}" class="deck-frac">
+          <text class="deck-frac-k">今日</text>
+          <text class="deck-done-num">{{pointTodayDone}}</text>
+          <text class="deck-total-num">/{{pointTodayTotal}}</text>
+        </view>
       </view>
-      <view class="deck-bar">
+      <view wx:if="{{pointTodayTotal}}" class="deck-bar">
         <view class="deck-bar-fill" style="width: {{pointDeckPercent}}%"></view>
       </view>
-    </view>
-
-    <view wx:if="{{point}}" class="card-meta">
-      <view wx:if="{{pointQueueLabel}}" class="queue-tag {{pointQueueTone === 'study' ? 'is-study' : ''}}" data-kind="point" bindtap="exitQueue">{{pointQueueLabel}} ✕</view>
-      <view class="card-counter">剩余 {{pointIds.length}} 张</view>
-      <view class="stage-pill">{{pointStageLabel}}</view>
+      <view wx:if="{{point}}" class="deck-meta">
+        <view wx:if="{{pointQueueLabel}}" class="queue-tag {{pointQueueTone === 'study' ? 'is-study' : ''}}" data-kind="point" bindtap="exitQueue">{{pointQueueLabel}} ✕</view>
+        <view wx:else class="deck-breakdown">
+          <text class="deck-k">到期</text><text class="deck-v">{{pointDeckDue}}</text>
+          <text class="deck-dot">·</text>
+          <text class="deck-k">新卡</text><text class="deck-v">{{pointDeckNew}}</text>
+        </view>
+        <view class="stage-pill">{{pointStageLabel}}</view>
+      </view>
     </view>
 
     <view wx:if="{{point}}" class="flashcard {{pointFlipped ? 'is-flipped' : ''}}" bindtap="flipPoint">
