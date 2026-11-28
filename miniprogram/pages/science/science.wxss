@@ -82,16 +82,104 @@
   background: #0f8a5a;
   box-shadow: 0 4rpx 12rpx rgba(15, 138, 90, 0.25);
 }
-.grade-row {
-  margin-bottom: 8rpx;
+
+/* ============ 今日背诵卡头 ============ */
+/* 右侧留出悬浮球：球体 208rpx 宽 + 边距 */
+.deck-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-bottom: 20rpx;
+  padding-right: 240rpx;
 }
-.grade-row .chip {
+.deck-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #14352a;
+}
+.deck-sub {
+  display: flex;
+  align-items: baseline;
+  font-size: 22rpx;
+  color: #6b8075;
+}
+.deck-label {
+  font-size: 22rpx;
+  color: #6b8075;
+  margin-right: 10rpx;
+}
+.deck-done-num {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #0f8a5a;
+  line-height: 1;
+  margin-right: 6rpx;
+}
+.deck-total-num {
+  font-size: 24rpx;
+  color: #8ea196;
+}
+.deck-sep {
+  margin: 0 12rpx;
+  color: #c3d4c9;
+}
+/* 今日进度条 */
+.deck-bar {
+  margin-top: 14rpx;
+  width: 300rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: #e2efe8;
+  overflow: hidden;
+}
+.deck-bar-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #34b57c 0%, #0f8a5a 100%);
+  transition: width 0.3s ease;
+}
+
+/* 今日卡组清空 */
+.deck-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: #ffffff;
-  border: 2rpx solid #cfe3d6;
+  border-radius: 28rpx;
+  padding: 60rpx 40rpx;
+  box-shadow: 0 14rpx 40rpx rgba(16, 38, 29, 0.08);
+  text-align: center;
+  min-height: 520rpx;
 }
-.grade-row .chip.active {
-  background: #0f8a5a;
-  border-color: #0f8a5a;
+.deck-empty-icon {
+  width: 120rpx;
+  height: 120rpx;
+  line-height: 120rpx;
+  border-radius: 50%;
+  background: #e4f1e9;
+  color: #0f8a5a;
+  font-size: 60rpx;
+  font-weight: 800;
+  margin-bottom: 28rpx;
+}
+.deck-empty-title {
+  font-size: 34rpx;
+  font-weight: 800;
+  color: #14352a;
+  margin-bottom: 14rpx;
+}
+.deck-empty-desc {
+  font-size: 24rpx;
+  color: #6b8075;
+  line-height: 1.6;
+  padding: 0 10rpx;
+}
+.deck-empty-btn {
+  margin-top: 40rpx;
+  width: 100%;
+  max-width: 440rpx;
 }
 
 /* 计数与阶段靠左排：右上角让给悬浮球，避免球压住文字 */
@@ -584,3 +672,31 @@
   border-radius: 999rpx;
 }
 .queue-tag.is-study { background: #d6a13c; }
+
+/* 计划页：公式待复习入口（公式不参与每日卡组，单独入口） */
+.plan-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 2rpx solid #e2efe8;
+  border-radius: 16rpx;
+  padding: 24rpx 28rpx;
+  margin-bottom: 28rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #14352a;
+}
+.plan-entry-badge {
+  font-size: 24rpx;
+  color: #ffffff;
+  background: #d6a13c;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+}
+.plan-foot-tip {
+  text-align: center;
+  font-size: 22rpx;
+  color: #8ea196;
+  padding: 20rpx 0 8rpx;
+}

@@ -12,26 +12,27 @@
     >{{item.label}}</view>
   </view>
 
-  <!-- ========== 模块一：知识点卡 ========== -->
+  <!-- ========== 模块一：每日背诵（今日卡组） ========== -->
+  <!-- 只放「今天该背的」：到期复习 + 今日额度内的新卡，评过即离场 -->
   <view wx:if="{{activeTab === 'point'}}" class="panel panel-fill">
-    <scroll-view wx:if="{{subject === 'bio' && !pointQueue}}" class="chip-row grade-row" scroll-x>
-      <view
-        wx:for="{{gradeOptions}}" wx:key="key"
-        class="chip {{gradeFilter === item.key ? 'active' : ''}}"
-        data-key="{{item.key}}" bindtap="onGradeFilter"
-      >{{item.label}}</view>
-    </scroll-view>
-    <scroll-view wx:if="{{!pointQueue}}" class="chip-row" scroll-x>
-      <view
-        wx:for="{{pointUnits}}" wx:key="key"
-        class="chip {{unitFilter === item.key ? 'active' : ''}}"
-        data-key="{{item.key}}" bindtap="onUnitFilter"
-      >{{item.label}}</view>
-    </scroll-view>
+    <view class="deck-head">
+      <view class="deck-title">{{subject === 'bio' ? '生物' : '化学'}} · 今日背诵</view>
+      <view class="deck-sub">
+        <text class="deck-label">今日</text>
+        <text class="deck-done-num">{{pointTodayDone}}</text>
+        <text class="deck-total-num">/ {{pointTodayTotal}}</text>
+        <text class="deck-sep">·</text>
+        <text wx:if="{{pointQueue}}">{{pointQueueLabel}}</text>
+        <text wx:else>到期 {{pointDeckDue}} · 新卡 {{pointDeckNew}}</text>
+      </view>
+      <view class="deck-bar">
+        <view class="deck-bar-fill" style="width: {{pointDeckPercent}}%"></view>
+      </view>
+    </view>
 
     <view wx:if="{{point}}" class="card-meta">
       <view wx:if="{{pointQueueLabel}}" class="queue-tag {{pointQueueTone === 'study' ? 'is-study' : ''}}" data-kind="point" bindtap="exitQueue">{{pointQueueLabel}} ✕</view>
-      <view class="card-counter">{{pointIndex + 1}} / {{pointIds.length}}</view>
+      <view class="card-counter">剩余 {{pointIds.length}} 张</view>
       <view class="stage-pill">{{pointStageLabel}}</view>
     </view>
 
@@ -85,8 +86,16 @@
       <view class="btn-rate btn-forget" data-delta="-1" bindtap="ratePoint">忘记了 ↻</view>
       <view class="btn-nav" bindtap="nextPoint">下一个 →</view>
     </view>
-    <view wx:if="{{point}}" class="rate-hint">下次复习：{{pointNextDue || '待安排'}} ｜ 已学 {{pointTotal}} 条 · 今日到期 {{pointDue}} 条</view>
-    <view wx:if="{{!point}}" class="empty">该分类下暂无知识点</view>
+    <view wx:if="{{point}}" class="rate-hint">记住了 → 隔更久再背；忘记了 → 明天重来｜今日还剩 {{pointIds.length - pointIndex - 1}} 张</view>
+
+    <!-- 今日卡组清空 -->
+    <view wx:if="{{!point}}" class="deck-empty">
+      <view class="deck-empty-icon">✓</view>
+      <view class="deck-empty-title">{{pointTodayDone ? '今天的卡片背完了' : '今天没有要背的卡片'}}</view>
+      <view wx:if="{{pointTodayDone}}" class="deck-empty-desc">今天共背 {{pointTodayDone}} 张 · 明天按 1→2→4→7 天间隔自动排卡</view>
+      <view wx:else class="deck-empty-desc">这个科目已全部完成固化，想回顾去复习计划里翻</view>
+      <view class="btn-outline deck-empty-btn" bindtap="goPlan">看复习计划 →</view>
+    </view>
   </view>
 
   <!-- ========== 模块二：公式卡 ========== -->
@@ -208,8 +217,12 @@
     </view>
 
     <view class="plan-actions">
-      <view class="btn-primary" bindtap="startReview">开始今日复习{{planDueCount ? '（' + planDueCount + '）' : ''}}</view>
-      <view class="btn-outline" bindtap="startStudy">学新卡片{{planNewCount ? '（' + planNewCount + '）' : ''}}</view>
+      <view class="btn-primary" bindtap="startTodayDeck">开始今日背诵{{planDeckCount ? '（' + planDeckCount + ' 张）' : ''}}</view>
+    </view>
+
+    <view wx:if="{{planFormulaDueCount}}" class="plan-entry" bindtap="startFormulaReview">
+      <text>🧪 公式待复习</text>
+      <text class="plan-entry-badge">{{planFormulaDueCount}} 条</text>
     </view>
 
     <view class="curve-note">
@@ -261,7 +274,7 @@
       </view>
     </view>
 
-    <view class="plan-foot" bindtap="browseAllCards">浏览全部卡片 →</view>
+    <view class="plan-foot-tip">点清单里任一卡片，可直接从这张背起</view>
   </view>
 
 </view>
