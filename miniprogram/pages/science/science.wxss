@@ -340,14 +340,48 @@
   line-height: 1.6;
   width: 100%;
 }
+/* 方程式：一行放得下就一行，放不下按箭头断成「反应物 →」/「生成物」。
+   组内（+ 6O₂）不拆，组间才允许折行 */
 .formula-line {
-  margin-top: 32rpx;
-  font-size: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  max-width: 100%;
+  margin-top: 28rpx;
   font-weight: 800;
   color: #0f8a5a;
   font-family: Georgia, 'Times New Roman', serif;
-  text-align: center;
-  letter-spacing: 2rpx;
+  line-height: 1.35;
+}
+.formula-line.fs-38 { font-size: 38rpx; }
+.formula-line.fs-32 { font-size: 32rpx; }
+.formula-line.fs-27 { font-size: 27rpx; }
+.formula-line.fs-24 { font-size: 24rpx; }
+.eq-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4rpx 16rpx;
+  max-width: 100%;
+}
+.eq-group {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.eq-tok {
+  color: #0f8a5a;
+}
+.eq-op {
+  color: #7d968a;
+  font-weight: 700;
+}
+.eq-arrow {
+  color: #7d968a;
 }
 .flip-hint {
   position: absolute;

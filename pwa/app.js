@@ -1665,6 +1665,95 @@ function sciPointCard() {
     </div>`;
 }
 
+/* ==================== 方程式排版 ====================
+ * 一行放得下就一行；放不下按运算符断成两行，而不是让浏览器在任意空格处折断，
+ * 留下单独一行孤零零的 6O₂、或行首多出一个 +。
+ * 断点优先级：箭头 → 等号 → 竖线 → 间隔号；运算符留在断点前那一行的行尾。
+ * 等宽字体下每个 ASCII 字符约 0.6em，宽度估算误差由 flex-wrap 兜底。 */
+
+const EQ_OPS = ['→', '⇌', '⟶', '=', '+', '·', '｜', '|', '÷', '×', '/', '≈'];
+const EQ_SPLIT = /([→⇌⟶=+·｜|÷×/≈])/;
+const EQ_BREAKS = [
+  { re: /→|⇌|⟶/, pick: 'first' },
+  { re: /=/, pick: 'first' },
+  { re: /｜|\|/, pick: 'balance' },
+  { re: /·/, pick: 'balance' }
+];
+const EQ_SIZES = [17, 15, 13.5, 12];
+const EQ_WIDTH = 292;      // 卡片正面可用宽度（px，390 宽屏幕实测）
+
+function eqTokens(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return [];
+  const groups = [];
+  let op = '';
+  const push = (word) => {
+    if (EQ_OPS.indexOf(word) > -1) {
+      op = op ? op + ' ' + word : word;
+      return;
+    }
+    groups.push({ op, text: word });
+    op = '';
+  };
+  raw.split(/\s+/).forEach((word) => {
+    word.split(EQ_SPLIT).forEach((piece) => { if (piece) push(piece); });
+  });
+  if (op && groups.length) groups[groups.length - 1].text += ' ' + op;
+  return groups;
+}
+
+function eqCharEm(ch) {
+  if (/[\u3000-\u303f\u4e00-\u9fff\uff00-\uffef]/.test(ch)) return 1;
+  return 0.62;
+}
+
+function eqRowWidth(row, size) {
+  let width = 0;
+  row.forEach((g, i) => {
+    if (i) width += 7;
+    if (g.op) width += g.op.length * eqCharEm('m') * size + 3;
+    width += Array.from(g.text).reduce((sum, ch) => sum + eqCharEm(ch) * size, 0);
+  });
+  return width;
+}
+
+function eqSplitAt(groups, i) {
+  const op = groups[i].op;
+  const left = groups.slice(0, i).concat([{ op: '', text: op, arrow: true }]);
+  const right = groups.slice(i).map((g, n) => (n ? g : { op: '', text: g.text }));
+  return [left, right];
+}
+
+function eqLayout(text) {
+  const groups = eqTokens(text);
+  if (!groups.length) return { size: EQ_SIZES[0], rows: [] };
+  for (const size of EQ_SIZES) {
+    if (eqRowWidth(groups, size) <= EQ_WIDTH) return { size, rows: [groups] };
+    for (const rule of EQ_BREAKS) {
+      const hits = [];
+      groups.forEach((g, i) => { if (i > 0 && rule.re.test(g.op)) hits.push(i); });
+      const list = rule.pick === 'first' ? hits.slice(0, 1) : hits;
+      let best = null;
+      list.forEach((i) => {
+        const rows = eqSplitAt(groups, i);
+        const w1 = eqRowWidth(rows[0], size);
+        const w2 = eqRowWidth(rows[1], size);
+        if (w1 > EQ_WIDTH || w2 > EQ_WIDTH) return;
+        const score = rule.pick === 'balance' ? Math.max(w1, w2) : i;
+        if (!best || score < best.score) best = { score, rows };
+      });
+      if (best) return { size, rows: best.rows };
+    }
+  }
+  return { size: EQ_SIZES[EQ_SIZES.length - 1], rows: [groups] };
+}
+
+function eqMarkup(text, extra) {
+  const layout = eqLayout(text);
+  const rows = layout.rows.map((row) => `<div class="eq-row">${row.map((g) => `<span class="eq-group">${g.op ? `<i class="eq-op">${esc(g.op)}</i>` : ''}<b class="eq-tok${g.arrow ? ' eq-arrow' : ''}">${esc(g.text)}</b></span>`).join('')}</div>`).join('');
+  return `<div class="sci-formula${extra ? ' ' + extra : ''}" style="font-size:${layout.size}px">${rows}</div>`;
+}
+
 function sciFormulaCard() {
   const list = sciFormulas();
   if (!list.length) return `<div class="card empty"><span class="ico">🧪</span>该分类暂无公式</div>`;
@@ -1681,13 +1770,13 @@ function sciFormulaCard() {
           <div class="face face-front sci-front" data-act="sci-flip">
             <span class="card-badge">${esc(f.type || '')}</span>
             <span class="sci-term">${esc(en ? f.en : f.cn)}</span>
-            <span class="sci-formula">${esc(f.formula)}</span>
+            ${eqMarkup(f.formula)}
             <span class="card-flip-hint">点击翻面看表达式与条件</span>
           </div>
           <div class="face face-back sci-back" data-act="sci-flip">
             <span class="sci-back-term">${esc(en ? f.en : f.cn)}</span>
             <p class="sci-def">${esc(en ? f.exprEn : f.expr)}</p>
-            <span class="sci-formula">${esc(f.formula)}</span>
+            ${eqMarkup(f.formula, 'is-left')}
             ${f.cond ? `<p class="sci-cond">条件：${esc(en ? (f.condEn || f.cond) : f.cond)}</p>` : ''}
             <p class="sci-note">${esc(en ? f.noteEn : f.noteCn)}</p>
             <div class="sci-kw">${(f.keywords || []).map((k) => `<span><i>${esc(k.en)}</i> / ${esc(k.cn)}</span>`).join('')}</div>

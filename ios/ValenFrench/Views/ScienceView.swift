@@ -369,11 +369,7 @@ struct ScienceView: View {
                 .foregroundColor(Theme.ink)
                 .multilineTextAlignment(.center)
 
-            Text(store.currentFormula?.formula ?? "")
-                .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                .foregroundColor(Theme.primary)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.65)
+            formulaLines()
 
             Spacer(minLength: 4)
             Text("点击翻面看表达式、条件与 LC 提示")
@@ -384,6 +380,21 @@ struct ScienceView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// 方程式按运算符断行（一行放得下就一行），不让 SwiftUI 在任意空格处折
+    private func formulaLines(centered: Bool = true) -> some View {
+        let layout = EquationLayout.layout(store.currentFormula?.formula ?? "", width: 300)
+        return VStack(alignment: centered ? .center : .leading, spacing: 2) {
+            ForEach(Array(layout.lines.enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.system(size: layout.fontSize, weight: .semibold, design: .monospaced))
+                    .foregroundColor(Theme.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
+    }
+
     private var formulaBack: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
@@ -391,9 +402,7 @@ struct ScienceView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(Theme.ink)
 
-                Text(store.currentFormula?.formula ?? "")
-                    .font(.system(size: 17, weight: .bold, design: .monospaced))
-                    .foregroundColor(Theme.primary)
+                formulaLines(centered: false)
 
                 if let cond = store.currentFormula?.cond, !cond.isEmpty {
                     Text("条件：\(store.showEnglish ? (store.currentFormula?.condEn ?? cond) : cond)")

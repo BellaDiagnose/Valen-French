@@ -119,7 +119,14 @@
       <view class="face face-front">
         <view class="card-tag">{{formulaLang === 'en' ? formula.en : formula.cn}} · {{subject === 'bio' ? '生物' : '化学'}}</view>
         <view class="expr-main">{{formulaLang === 'en' ? formula.exprEn : formula.expr}}</view>
-        <view wx:if="{{formula.formula}}" class="formula-line">{{formula.formula}}</view>
+        <view wx:if="{{formula.formula}}" class="formula-line fs-{{formulaSize}}">
+          <view wx:for="{{formulaRows}}" wx:for-item="row" wx:key="k" class="eq-row">
+            <view wx:for="{{row.groups}}" wx:key="k" class="eq-group">
+              <text wx:if="{{item.op}}" class="eq-op">{{item.op}}</text>
+              <text class="eq-tok {{item.arrow ? 'eq-arrow' : ''}}">{{item.text}}</text>
+            </view>
+          </view>
+        </view>
         <view class="flip-hint">点击卡片查看含义与考点 ↻</view>
       </view>
       <view class="face face-back">

@@ -7,6 +7,7 @@
 const S = require('../french/study.js');
 const FLOAT_NAV = require('../common/float-nav.js');
 const R = require('../common/recall.js');
+const EQ = require('../common/equation.js');
 const B = require('./data-bio.js');
 const C = require('./data-chem.js');
 const F = require('./data-formula.js');
@@ -99,6 +100,8 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     formulaQueueTone: '',
     formulaIndex: 0,
     formula: null,
+    formulaRows: [],        // 排版行：每行是若干不可拆的「运算符 + 化学式」组
+    formulaSize: 38,        // 38 / 32 / 27 / 24（rpx）
     formulaFlipped: false,
     formulaLang: 'zh',
     formulaStage: -1,
@@ -422,7 +425,7 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   showFormula(i) {
     const ids = this.visibleFormulaIds();
     if (!ids.length) {
-      this.setData({ formula: null, formulaIds: [], formulaIndex: 0 });
+      this.setData({ formula: null, formulaIds: [], formulaIndex: 0, formulaRows: [], formulaSize: 38 });
       return;
     }
     const idx = Math.max(0, Math.min(i, ids.length - 1));
@@ -433,11 +436,19 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       formulaIds: ids,
       formulaIndex: idx,
       formula,
+      formulaRows: formula && formula.formula ? this.layoutFormula(formula.formula) : [],
+      formulaSize: formula && formula.formula ? EQ.layout(formula.formula).size : 0,
       formulaFlipped: false,
       formulaStage: mem ? mem.stage : -1,
       formulaStageLabel: this.stageLabel(mem ? mem.stage : -1),
       formulaNextDue: mem && mem.dueAt ? this.dueDate(mem.dueAt) : ''
     });
+  },
+
+  // 公式排版：一行放得下就一行，放不下按箭头断成两行（见 common/equation.js）
+  layoutFormula(text) {
+    const layout = EQ.layout(text);
+    return layout.rows.map((row, i) => ({ k: i, groups: row }));
   },
 
   prevFormula() { this.showFormula(this.data.formulaIndex - 1); },
