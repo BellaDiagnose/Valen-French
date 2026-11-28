@@ -16,14 +16,18 @@ struct ScienceView: View {
     var initialSubject: ScienceStore.Subject?
     /// 悬浮球选中的模块交回 RootView 切换根页面
     var onNavigate: (ModuleNavTarget) -> Void
+    /// 学科变化同步给 RootView，用于顶栏显示准确的科目名
+    var onSubjectChange: (ScienceStore.Subject) -> Void
 
     @StateObject private var store = ScienceStore()
     @State private var quizWay: ScienceQuizWay = .choice
 
     init(initialSubject: ScienceStore.Subject? = nil,
-         onNavigate: @escaping (ModuleNavTarget) -> Void = { _ in }) {
+         onNavigate: @escaping (ModuleNavTarget) -> Void = { _ in },
+         onSubjectChange: @escaping (ScienceStore.Subject) -> Void = { _ in }) {
         self.initialSubject = initialSubject
         self.onNavigate = onNavigate
+        self.onSubjectChange = onSubjectChange
     }
 
     var body: some View {
@@ -54,18 +58,21 @@ struct ScienceView: View {
                                  switch target {
                                  case .chem, .bio:
                                      store.selectSubject(target == .chem ? .chem : .bio)
-                                     onNavigate(target)
-                                 default:
-                                     onNavigate(target)
+                                 case .enavant, .simple:
+                                     break
                                  }
+                                 onNavigate(target)
                              })
-                .padding(.trailing, 10)
-                .padding(.top, 120)
+                .padding(.top, 0)
         }
         .toast(text: $store.toast)
         .onAppear {
             if let initialSubject { store.selectSubject(initialSubject) }
             store.refreshDay()
+            onSubjectChange(store.subject)
+        }
+        .onChange(of: store.subject) { value in
+            onSubjectChange(value)
         }
     }
 

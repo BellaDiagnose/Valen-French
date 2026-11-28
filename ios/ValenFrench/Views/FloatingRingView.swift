@@ -1,15 +1,14 @@
 import SwiftUI
 
-// MARK: - 模块导航目标（与小程序 float-nav.js 的 NAV_ITEMS 一致）
+// MARK: - 模块导航目标（与小程序 float-nav.js 的 NAV_ITEMS 一致，首页由 navbar 承担）
 
 enum ModuleNavTarget: String, CaseIterable, Identifiable {
-    case home, enavant, simple, chem, bio
+    case enavant, simple, chem, bio
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .home: return "首页"
         case .enavant: return "En Avant"
         case .simple: return "简明法语"
         case .chem: return "化学"
@@ -19,7 +18,6 @@ enum ModuleNavTarget: String, CaseIterable, Identifiable {
 
     var mark: String {
         switch self {
-        case .home: return "⌂"
         case .enavant: return "EA"
         case .simple: return "CF"
         case .chem: return "CH"
@@ -29,7 +27,7 @@ enum ModuleNavTarget: String, CaseIterable, Identifiable {
 
     var accent: Color {
         switch self {
-        case .home, .enavant: return Color(hex: 0x0F8A5A)
+        case .enavant: return Color(hex: 0x0F8A5A)
         case .simple: return Color(hex: 0x128A80)
         case .chem: return Color(hex: 0xB8783C)
         case .bio: return Color(hex: 0x3E7F9E)
@@ -38,7 +36,7 @@ enum ModuleNavTarget: String, CaseIterable, Identifiable {
 
     var tint: Color {
         switch self {
-        case .home, .enavant: return Color(hex: 0xE4F1E9)
+        case .enavant: return Color(hex: 0xE4F1E9)
         case .simple: return Color(hex: 0xE5F5F1)
         case .chem: return Color(hex: 0xFBF0E5)
         case .bio: return Color(hex: 0xE8F2F7)
@@ -46,54 +44,97 @@ enum ModuleNavTarget: String, CaseIterable, Identifiable {
     }
 }
 
-/// 右上角模块导航球：小程序 float-nav 同款白色圆角方块。
-/// 正面 = 当前模块进度环 + 模块名 + 「点击切换模块」；背面 = 五个模块入口。
-/// 法语页数值是连续天数「N 天」，科学页是今日已背「N 今日」。
+/// 模块导航球：小程序 float-nav 同款白色圆角方块。
+/// 正面 = 当前模块进度环 + 模块名 + 「点击切换模块」；背面 = 四个科目入口（首页由 navbar 承担）。
+/// 可拖到页面任意位置，位置在三个页面之间共享并持久化。
 struct FloatingRingView: View {
-    var target: ModuleNavTarget = .home
+    var target: ModuleNavTarget = .enavant
     var value: Int = 1
     var unit: String = "天"
     var fraction: Double = 0
     var onSelect: (ModuleNavTarget) -> Void = { _ in }
 
-    @State private var base: CGSize = .zero
-    @State private var translation: CGSize = .zero
+    /// 球心在容器坐标系中的位置；nil 表示还没拖动过，用默认停靠点
+    @State private var center: CGPoint?
+    @State private var dragging: CGSize = .zero
     @State private var flipped = false
+
+    /// 跨页面共享拖动结果（"x,y"），离开页面再回来不会被重置
+    @AppStorage("nav_ball_center") private var savedCenter: String = ""
 
     private let ballW: CGFloat = 108
     private let ballH: CGFloat = 150
     private let openW: CGFloat = 198
-    private let openH: CGFloat = 300
+    private let openH: CGFloat = 238
+    private let edge: CGFloat = 8
 
     var body: some View {
-        Group {
-            if flipped { back } else { front }
+        GeometryReader { geo in
+            let size = currentSize
+            let at = resolved(container: geo.size, size: size)
+
+            Group {
+                if flipped {
+                    back
+                } else {
+                    front(container: geo.size)
+                }
+            }
+            .frame(width: size.width, height: size.height, alignment: .top)
+            .position(x: at.x + size.width / 2, y: at.y + size.height / 2)
+            .animation(.easeInOut(duration: 0.3), value: flipped)
         }
-        .frame(width: flipped ? openW : ballW,
-               height: flipped ? openH : ballH,
-               alignment: .top)
-        .offset(x: clamped.width, y: clamped.height)
-        .gesture(dragGesture)
-        .animation(.easeInOut(duration: 0.3), value: flipped)
+        .onAppear {
+            if center == nil, !savedCenter.isEmpty {
+                let parts = savedCenter.split(separator: ",").compactMap { Double($0) }
+                if parts.count == 2 { center = CGPoint(x: parts[0], y: parts[1]) }
+            }
+        }
     }
 
-    private var clamped: CGSize {
-        CGSize(width: min(0, max(-250, base.width + translation.width)),
-               height: max(0, min(420, base.height + translation.height)))
+    private var currentSize: CGSize {
+        flipped ? CGSize(width: openW, height: openH) : CGSize(width: ballW, height: ballH)
     }
 
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 8)
-            .onChanged { translation = $0.translation }
+    /// 左上角坐标：默认右上角停靠，拖动后按球心还原
+    private func resolved(container: CGSize, size: CGSize) -> CGPoint {
+        let base: CGPoint
+        if let center {
+            base = CGPoint(x: center.x + dragging.width - size.width / 2,
+                           y: center.y + dragging.height - size.height / 2)
+        } else {
+            base = CGPoint(x: container.width - 10 - size.width,
+                           y: min(120, max(edge, container.height - size.height - edge)))
+        }
+        return clamp(base, container: container, size: size)
+    }
+
+    /// 保证整个球（含展开态）始终在页面内，可停在任意位置
+    private func clamp(_ point: CGPoint, container: CGSize, size: CGSize) -> CGPoint {
+        let maxX = max(edge, container.width - size.width - edge)
+        let maxY = max(edge, container.height - size.height - edge)
+        return CGPoint(x: min(maxX, max(edge, point.x)),
+                       y: min(maxY, max(edge, point.y)))
+    }
+
+    private func dragGesture(container: CGSize, size: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 2)
+            .onChanged { value in
+                dragging = value.translation
+            }
             .onEnded { _ in
-                base = clamped
-                translation = .zero
+                let landed = resolved(container: container, size: size)
+                let next = CGPoint(x: landed.x + size.width / 2,
+                                   y: landed.y + size.height / 2)
+                center = next
+                dragging = .zero
+                savedCenter = "\(Int(next.x)),\(Int(next.y))"
             }
     }
 
     // MARK: 正面
 
-    private var front: some View {
+    private func front(container: CGSize) -> some View {
         VStack(spacing: 0) {
             ZStack {
                 Circle()
@@ -138,6 +179,8 @@ struct FloatingRingView: View {
         .frame(width: ballW, height: ballH)
         .navBallSurface()
         .contentShape(Rectangle())
+        .gesture(dragGesture(container: container,
+                             size: CGSize(width: ballW, height: ballH)))
         .onTapGesture { withAnimation { flipped = true } }
     }
 

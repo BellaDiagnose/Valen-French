@@ -5,15 +5,27 @@ import SwiftUI
 // iOS 首页 / 法语页 / 科学页共用同一条，三个页面是平行关系而非弹层。
 struct PageNavBar: View {
     let title: String
+    /// 当前科目名，随页面 / 词库 / 学科实时变化；首页无科目时为空
+    var subject: String?
     var showHome: Bool = true
     var onHome: () -> Void = {}
 
     var body: some View {
         ZStack {
-            Text(title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(Color(hex: 0x10261D))
-                .lineLimit(1)
+            VStack(spacing: 1) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(Color(hex: 0x10261D))
+                    .lineLimit(1)
+
+                if let subject, !subject.isEmpty {
+                    Text(subject)
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(0.3)
+                        .foregroundColor(Theme.primary)
+                        .lineLimit(1)
+                }
+            }
 
             HStack {
                 if showHome {
@@ -52,7 +64,9 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageNavBar(title: navTitle, showHome: page != .home) { goHome() }
+            PageNavBar(title: "BELLA 助手",
+                       subject: navSubject,
+                       showHome: page != .home) { goHome() }
 
             ZStack(alignment: .topTrailing) {
                 Theme.bg.ignoresSafeArea()
@@ -65,7 +79,9 @@ struct RootView: View {
                     frenchStack
                         .transition(.opacity)
                 case .science:
-                    ScienceView(initialSubject: scienceSubject, onNavigate: handleNav)
+                    ScienceView(initialSubject: scienceSubject,
+                                onNavigate: handleNav,
+                                onSubjectChange: { scienceSubject = $0 })
                         .transition(.opacity)
                 }
             }
@@ -80,8 +96,13 @@ struct RootView: View {
         }
     }
 
-    private var navTitle: String {
-        page == .science ? "BELLA 助手 · 科学" : "BELLA 助手"
+    /// 顶栏第二行：显示当前页面的**准确科目名**，不再用「科学」这种泛称
+    private var navSubject: String? {
+        switch page {
+        case .home: return nil
+        case .french: return store.source.label
+        case .science: return scienceSubject.label
+        }
     }
 
     private func goHome() {
@@ -107,16 +128,12 @@ struct RootView: View {
                              unit: "天",
                              fraction: store.ringProgress,
                              onSelect: handleNav)
-                .padding(.trailing, 10)
-                .padding(.top, 120)
         }
     }
 
-    /// 悬浮球里五个模块是平行入口，等价于小程序的 redirectTo / navigateBack
+    /// 悬浮球里四个科目是平行入口，等价于小程序的 redirectTo（首页由 navbar 的 home 按钮承担）
     private func handleNav(_ target: ModuleNavTarget) {
         switch target {
-        case .home:
-            goHome()
         case .enavant, .simple:
             let source: WordSource = target == .enavant ? .enavant : .simple
             if store.source != source { store.switchSource(source) }
@@ -124,11 +141,8 @@ struct RootView: View {
             withAnimation(.easeOut(duration: 0.2)) { page = .french }
         case .chem, .bio:
             let subject: ScienceStore.Subject = target == .chem ? .chem : .bio
-            if page == .science {
-                // 已在科学页：让 ScienceView 自己切学科，只同步下次进入的默认值
-                scienceSubject = subject
-            } else {
-                scienceSubject = subject
+            scienceSubject = subject
+            if page != .science {
                 withAnimation(.easeOut(duration: 0.2)) { page = .science }
             }
         }
