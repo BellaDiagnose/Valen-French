@@ -87,6 +87,36 @@ python3 ios/Tools/make_appicon.py --preview
 
 `Design/Theme.swift` 统一色板，主色取自图标渐变：`primary #0F8A5A`、`primarySoft #22AC70`、`primaryDeep #053A28`，底色 `#F2F8F4`，正文墨绿黑 `#10261D`。`AccentColor.colorset` 同步为 `#0F8A5A`，与小程序 `app.wxss`、PWA `app.css` 的变量保持一致。
 
-## 说明
+## 真机安装（无本机 Xcode 的做法）
 
-本机仅有 Command Line Tools、没有安装 Xcode，因此工程已通过 `plutil -lint`、`swiftc -parse` 语法校验与 JSON 结构校验，但**未做过真机编译**。首次在 Xcode 打开若报错，优先检查 Signing Team 与 `Info.plist` 路径。
+本机只有 Command Line Tools（没有 Xcode，磁盘也放不下），所以编译与签名拆成两段：**GitHub 的 macOS runner 负责编译，本机只做签名和推包**。
+
+```
+git tag -f ios-v0.1.2 && git push -f origin ios-v0.1.2   # 触发 .github/workflows/ios-ipa.yml
+./ios/Tools/install_iphone.sh                            # 取最新 ipa → xtool 签名 → 装到 iPhone
+```
+
+| 环节 | 谁做 | 说明 |
+| --- | --- | --- |
+| 编译 | GitHub Actions `macos-15`（Xcode 16.4） | `xcodebuild -target ValenFrench -sdk iphoneos CODE_SIGNING_ALLOWED=NO`，产物是**未签名** ipa |
+| 分发 | Release 附件 | workflow 用 `if: always()` 把 `ValenFrench-unsigned.ipa` 和 `xcodebuild.log` 挂到 Release，公开仓库可匿名下载，本机不需要 token。**构建失败也能拿到日志** |
+| 签名安装 | 本机 [xtool](https://github.com/xtool-org/xtool) 1.24.0 | `xtool install` 解包 → 配对握手 → Developer Services 自动注册设备/证书/App ID → 就地签名 → 重打包 → AFC 上传安装 |
+
+首次准备：
+
+```bash
+# xtool 官方 macOS 发布包，Apple 公证签名
+curl -L -o /tmp/xtool.app.zip https://github.com/xtool-org/xtool/releases/download/1.24.0/xtool.app.zip
+unzip -q /tmp/xtool.app.zip -d /tmp && cp -R /tmp/xtool.app /Applications/
+ln -fs /Applications/xtool.app/Contents/Resources/bin/xtool ~/.local/bin/xtool
+xtool auth login      # Apple ID + 密码 + 双重认证码，交互式，凭证存本机
+```
+
+几条实测事实：
+
+- **bundle ID 会被改写**。免费账号的 App ID 必须全局唯一，xtool 会注册成 `XTL-<TeamID>.cn.valenrobotic.bellafrench`，装到设备上的 `CFBundleIdentifier` 也是这个。`xtool launch` 用它才找得到，用原 ID 会报 `Could not find an installed app`。
+- **首次打开要先信任开发者**：设置 → 通用 → VPN 与设备管理 → 信任 `jibin.zou@gmail.com`。
+- **签名 7 天过期**，重跑 `install_iphone.sh` 即可续期（同一份 ipa，不需要重新编译）。
+- **`xtool launch` 会失败**（`DebugserverClient.Error.unknown`）：本机没有 Developer Disk Image，`DDIMounter` 在 xtool 里是 `#if false` 的死代码。装完从桌面图标启动，不要用命令行启动。
+- 工程文件的 `Resources` 阶段必须引用 `PBXBuildFile`（`003F`），不能直接塞 `PBXFileReference`；塞错会让 xcodebuild 直接报「project is damaged」并以 `-[PBXFileReference buildPhase]: unrecognized selector` 崩溃。
+
