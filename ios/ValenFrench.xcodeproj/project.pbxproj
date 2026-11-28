@@ -27,6 +27,7 @@
 		FA000000000000000000003C /* ScienceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000038 /* ScienceStore.swift */; };
 		FA000000000000000000003D /* ScienceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000039 /* ScienceView.swift */; };
 		FA000000000000000000003E /* Science.json in Resources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000003A /* Science.json */; };
+		FA000000000000000000003F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000025 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -213,7 +214,7 @@
 			files = (
 				FA0000000000000000000036 /* Words.json in Resources */,
 				FA000000000000000000003E /* Science.json in Resources */,
-				FA0000000000000000000025 /* Assets.xcassets in Resources */,
+				FA000000000000000000003F /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
