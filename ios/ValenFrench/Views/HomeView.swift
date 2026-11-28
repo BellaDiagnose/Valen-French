@@ -183,25 +183,8 @@ struct HomeView: View {
     var body: some View {
         GeometryReader { geo in
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 10) {
-                    hero
-                    ringsCard
-
-                    HStack(alignment: .top, spacing: 10) {
-                        moduleCard(snapshot.modules[safe: 0], height: moduleHeight(geo))
-                        moduleCard(snapshot.modules[safe: 1], height: moduleHeight(geo))
-                    }
-                    HStack(alignment: .top, spacing: 10) {
-                        moduleCard(snapshot.modules[safe: 2], height: moduleHeight(geo))
-                        moduleCard(snapshot.modules[safe: 3], height: moduleHeight(geo))
-                    }
-
-                    rhythmCard
-                }
-                .padding(.horizontal, 15)
-                .padding(.top, 12)
-                .padding(.bottom, 16)
-                .frame(minHeight: geo.size.height, alignment: .top)
+                homeContent(cardHeight: cardHeight(for: geo.size.height),
+                            minHeight: geo.size.height)
             }
         }
         .background(Theme.bg)
@@ -213,10 +196,34 @@ struct HomeView: View {
         .offset(y: appeared ? 0 : 8)
     }
 
+    /// 内容单独成方法，避免 GeometryReader + ScrollView + 四张复杂卡片
+    /// 全挤在一个表达式里导致 -O 下类型检查超时
+    private func homeContent(cardHeight: CGFloat, minHeight: CGFloat) -> some View {
+        VStack(spacing: 10) {
+            hero
+            ringsCard
+
+            HStack(alignment: .top, spacing: 10) {
+                moduleCard(snapshot.modules[safe: 0], height: cardHeight)
+                moduleCard(snapshot.modules[safe: 1], height: cardHeight)
+            }
+            HStack(alignment: .top, spacing: 10) {
+                moduleCard(snapshot.modules[safe: 2], height: cardHeight)
+                moduleCard(snapshot.modules[safe: 3], height: cardHeight)
+            }
+
+            rhythmCard
+        }
+        .padding(.horizontal, 15)
+        .padding(.top, 12)
+        .padding(.bottom, 16)
+        .frame(minHeight: minHeight, alignment: .top)
+    }
+
     /// 四张模块卡吃掉剩余高度，避免高屏下方留一大片空白
-    private func moduleHeight(_ geo: GeometryProxy) -> CGFloat {
-        let fixed: CGFloat = 156 + 125 + 78 + 10 * 4 + 12 + 16
-        return min(232, max(172, (geo.size.height - fixed) / 2))
+    private func cardHeight(for available: CGFloat) -> CGFloat {
+        let fixed = 427
+        return min(232, max(172, (available - CGFloat(fixed)) / 2))
     }
 
     // MARK: Hero
@@ -339,72 +346,7 @@ struct HomeView: View {
                     onOpenFrench(module.id == "simple" ? .simple : .enavant, .card)
                 }
             } label: {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 0) {
-                        Text(module.mark)
-                            .font(.system(size: 10, weight: .heavy))
-                            .tracking(0.5)
-                            .foregroundColor(module.accent)
-                            .frame(width: 30, height: 30)
-                            .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(module.tint))
-                        Spacer(minLength: 0)
-                        Text("↗")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(Color(hex: 0x8EA196))
-                    }
-
-                    Text(module.name)
-                        .font(.system(size: 14.5, weight: .heavy))
-                        .foregroundColor(Theme.ink)
-                        .padding(.top, 6)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-
-                    Text(module.sub)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Theme.sub)
-                        .lineSpacing(1)
-                        .padding(.top, 3)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Spacer(minLength: 6)
-
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(module.percent)%")
-                            .font(.system(size: 22, weight: .heavy, design: .rounded))
-                            .foregroundColor(module.accent)
-                        Spacer(minLength: 0)
-                        Text("已学 \(module.studied)/\(module.total)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Theme.sub)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-
-                    BentoBar(percent: module.percent, tint: module.accent, height: 5)
-                        .padding(.top, 5)
-
-                    HStack(spacing: 0) {
-                        Text("固化 \(module.graduated)")
-                        Spacer(minLength: 4)
-                        Text("待复习 \(module.due)")
-                    }
-                    .font(.system(size: 9.5, weight: .bold))
-                    .foregroundColor(Color(hex: 0x8EA196))
-                    .padding(.top, 7)
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: height, alignment: .topLeading)
-                .background(RoundedRectangle(cornerRadius: 15, style: .continuous).fill(Theme.surface))
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(module.accent)
-                        .frame(height: 3)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                .shadow(color: Theme.ink.opacity(0.07), radius: 13, x: 0, y: 5)
+                ModuleCardBody(module: module, height: height)
             }
             .buttonStyle(.plain)
         } else {
@@ -455,6 +397,82 @@ struct HomeView: View {
                     .fill(Theme.chip))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - 模块卡内容（独立 View 类型，避免 Button label 的泛型推导拖垮类型检查）
+
+private struct ModuleCardBody: View {
+    let module: HomeModule
+    let height: CGFloat
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 0) {
+                Text(module.mark)
+                    .font(.system(size: 10, weight: .heavy))
+                    .tracking(0.5)
+                    .foregroundColor(module.accent)
+                    .frame(width: 30, height: 30)
+                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(module.tint))
+                Spacer(minLength: 0)
+                Text("↗")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(hex: 0x8EA196))
+            }
+
+            Text(module.name)
+                .font(.system(size: 14.5, weight: .heavy))
+                .foregroundColor(Theme.ink)
+                .padding(.top, 6)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            Text(module.sub)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Theme.sub)
+                .lineSpacing(1)
+                .padding(.top, 3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 6)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(module.percent)%")
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .foregroundColor(module.accent)
+                Spacer(minLength: 0)
+                Text("已学 \(module.studied)/\(module.total)")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(Theme.sub)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+
+            BentoBar(percent: module.percent, tint: module.accent, height: 5)
+                .padding(.top, 5)
+
+            HStack(spacing: 0) {
+                Text("固化 \(module.graduated)")
+                Spacer(minLength: 4)
+                Text("待复习 \(module.due)")
+            }
+            .font(.system(size: 9.5, weight: .bold))
+            .foregroundColor(Color(hex: 0x8EA196))
+            .padding(.top, 7)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: height, alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: 15, style: .continuous).fill(Theme.surface))
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(module.accent)
+                .frame(height: 3)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .shadow(color: Theme.ink.opacity(0.07), radius: 13, x: 0, y: 5)
     }
 }
 
