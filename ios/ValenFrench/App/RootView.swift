@@ -25,8 +25,8 @@ struct RootView: View {
                 .environmentObject(store)
                 .interactiveDismissDisabled(true)
         }
-        .sheet(isPresented: $showScience) {
-            ScienceView(initialSubject: scienceSubject)
+        .fullScreenCover(isPresented: $showScience) {
+            ScienceView(initialSubject: scienceSubject) { showScience = false }
         }
     }
 

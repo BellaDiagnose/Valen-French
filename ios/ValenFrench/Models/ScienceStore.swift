@@ -601,6 +601,16 @@ final class ScienceStore: ObservableObject {
         refreshDeck()
     }
 
+    /// 默写判分后记一次成绩并推进记忆（near 算对）
+    func recordRecall(gid: String, correct: Bool) {
+        quizAnswered = true
+        quizCorrect = correct
+        quizTotal += 1
+        if correct { quizRight += 1 }
+        defaults.set(["right": quizRight, "total": quizTotal], forKey: Key.stats)
+        rateQuiz(gid, correct: correct)
+    }
+
     func nextQuestion() { buildQuiz() }
 
     func resetStats() {

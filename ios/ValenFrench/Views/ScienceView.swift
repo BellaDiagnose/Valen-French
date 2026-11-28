@@ -1,346 +1,360 @@
 import SwiftUI
 
+// MARK: - 自测方式
+
+enum ScienceQuizWay: String, CaseIterable, Identifiable {
+    case choice, recall
+    var id: String { rawValue }
+    var label: String { self == .choice ? "四选一" : "默写" }
+}
+
 /// 科学独立页：七+八年级生物 / 八年级化学
-/// 每日背诵卡组（到期 + 当日额度新卡）、公式、自测、复习计划四块
+/// 结构与小程序 pages/science 对齐：四 tab（每日背诵 / 公式 / 自测 / 复习计划）
 struct ScienceView: View {
     /// 首页模块卡进入时指定学科；为 nil 时沿用上次选择
     var initialSubject: ScienceStore.Subject?
+    var onClose: () -> Void
 
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var store = ScienceStore()
+    @State private var quizWay: ScienceQuizWay = .choice
 
-    init(initialSubject: ScienceStore.Subject? = nil) {
+    init(initialSubject: ScienceStore.Subject? = nil,
+         onClose: @escaping () -> Void = {}) {
         self.initialSubject = initialSubject
+        self.onClose = onClose
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .bottom) {
-                Theme.bg.ignoresSafeArea()
+        ZStack(alignment: .top) {
+            Theme.bg.ignoresSafeArea()
 
-                VStack(spacing: 10) {
-                    subjectPicker
-                    segmentBar
+            VStack(spacing: 0) {
+                topBar
+                tabBar
 
-                    ScrollView(showsIndicators: false) {
-                        switch store.segment {
-                        case .point: pointPane
-                        case .formula: formulaPane
-                        case .quiz: quizPane
-                        case .plan: planPane
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 78)
-            }
-            .navigationTitle("科学速记")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        store.toggleLanguage()
-                    } label: {
-                        Text(store.showEnglish ? "EN" : "中")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(Theme.primary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Capsule().fill(Theme.chip))
+                Group {
+                    switch store.segment {
+                    case .point: pointPane
+                    case .formula: formulaPane
+                    case .quiz: ScrollView(showsIndicators: false) { quizPane }
+                    case .plan: ScrollView(showsIndicators: false) { planPane }
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") { dismiss() }
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Theme.primary)
-                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .onAppear {
-                if let initialSubject { store.selectSubject(initialSubject) }
-                store.refreshDay()
-            }
-            .toast(text: $store.toast)
+            .padding(.horizontal, 15)
+            .padding(.bottom, 12)
+        }
+        .toast(text: $store.toast)
+        .onAppear {
+            if let initialSubject { store.selectSubject(initialSubject) }
+            store.refreshDay()
         }
     }
 
-    // MARK: 顶部切换
+    // MARK: 顶部：返回 + 学科切换（替代小程序的悬浮球模块导航）
 
-    private var subjectPicker: some View {
-        Picker("学科", selection: Binding(
-            get: { store.subject },
-            set: { store.selectSubject($0) }
-        )) {
-            ForEach(ScienceStore.Subject.allCases) { Text($0.label).tag($0) }
+    private var topBar: some View {
+        HStack(spacing: 10) {
+            Button { onClose() } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("返回")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(Theme.primary)
+                .padding(.horizontal, 10)
+                .frame(height: 28)
+                .background(Capsule().fill(Theme.chip))
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 0)
+
+            Picker("学科", selection: Binding(
+                get: { store.subject },
+                set: { store.selectSubject($0) }
+            )) {
+                ForEach(ScienceStore.Subject.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 132)
         }
-        .pickerStyle(.segmented)
+        .padding(.top, 8)
+        .padding(.bottom, 2)
     }
 
-    private var segmentBar: some View {
-        HStack(spacing: 4) {
+    private var tabBar: some View {
+        HStack(spacing: 2) {
             ForEach(ScienceStore.Segment.allCases) { item in
                 let active = store.segment == item
                 Button { store.selectSegment(item) } label: {
                     Text(item.label)
-                        .font(.system(size: 12, weight: active ? .bold : .semibold))
-                        .foregroundColor(active ? .white : Theme.sub)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(active ? Theme.primary : Color(hex: 0x53675D))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 34)
+                        .frame(height: 44)
                         .background(
-                            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .fill(active ? Theme.primary : Theme.chip)
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(active ? Theme.surface : Color.clear)
+                                .shadow(color: active ? Theme.primary.opacity(0.18) : .clear,
+                                        radius: 7, x: 0, y: 3)
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
+        .padding(5)
+        .background(
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(Color(hex: 0xE3F0E9))
+        )
+        .shadow(color: Theme.ink.opacity(0.05), radius: 10, x: 0, y: 3)
+        .padding(.top, 10)
+        .padding(.bottom, 16)
     }
 
-    // MARK: 每日背诵（卡组）
+    // MARK: 模块一 每日背诵
 
     private var pointPane: some View {
-        VStack(spacing: 12) {
-            deckHeader
-
-            if store.queueKind == .point, !store.queueIDs.isEmpty {
-                queueChip
-            }
+        VStack(spacing: 10) {
+            deckHead
 
             if let point = store.currentPoint {
-                cardMeta(text: "第 \(store.pointIndex + 1) 张 · \(store.stageLabel(point.id))",
-                         tail: "剩余 \(store.deckPoints.count) 张")
+                cardMeta(counter: "剩余 \(store.deckIDs.count) 张",
+                         stage: store.stageLabel(point.id),
+                         queue: store.queueKind == .point ? store.queueLabel : nil)
 
-                ZStack {
-                    pointFront.opacity(store.flipped ? 0 : 1)
-                    pointBack
-                        .opacity(store.flipped ? 1 : 0)
-                        .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
-                }
-                .rotation3DEffect(.degrees(store.flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-                .animation(.easeInOut(duration: 0.42), value: store.flipped)
-                .frame(maxWidth: .infinity, minHeight: 320, maxHeight: 380)
-                .contentShape(Rectangle())
-                .onTapGesture { store.flip() }
-                .cardSurface(radius: 22, padding: 0)
+                flashCard(front: pointFront, back: pointBack)
 
-                deckActions
+                actionRow(isFormula: false)
+                rateHint
             } else {
                 deckEmpty
             }
         }
-        .padding(.bottom, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var deckHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("\(store.subject.label) · 今日背诵")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Theme.ink)
-                    Text(deckSubtitle)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Theme.sub)
-                }
-                Spacer(minLength: 0)
-                Text(remainingText)
-                    .font(.system(size: 11, weight: .bold))
+    /// 今日卡组头（小程序是裸的文字 + 细进度条，不是白卡）
+    private var deckHead: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("\(store.subject.label) · 今日背诵")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(Color(hex: 0x14352A))
+
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text("今日")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Color(hex: 0x6B8075))
+                Text("\(store.reviewedToday)")
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
                     .foregroundColor(Theme.primary)
+                Text("/ \(store.deckTotal)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(hex: 0x8EA196))
+                Text("·")
+                    .foregroundColor(Color(hex: 0xC3D4C9))
+                    .padding(.horizontal, 3)
+                Text(store.queueKind == .point
+                     ? "\(store.queueLabel) \(store.queueIDs.count) 条"
+                     : "到期 \(store.deckDue.count) · 新卡 \(store.deckFresh.count)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Color(hex: 0x6B8075))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
             }
+
             ProgressTrack(fraction: store.deckProgress)
+                .frame(width: 156)
+                .padding(.top, 6)
         }
-        .cardSurface(radius: 18, padding: 14)
+        .padding(.bottom, 2)
     }
 
-    private var deckSubtitle: String {
-        let head = "今日 \(store.reviewedToday) / \(store.deckTotal)"
-        if store.queueKind == .point {
-            return "\(head) · \(store.queueMode.label) \(store.queueIDs.count) 条"
-        }
-        return "\(head) · 到期 \(store.deckDue.count) · 新卡 \(store.deckFresh.count)"
-    }
-
-    private var remainingText: String {
-        store.queueKind == .point
-            ? "剩余 \(store.queueIDs.count) 张"
-            : "剩余 \(store.deckIDs.count) 张"
-    }
-
-    private var queueChip: some View {
-        HStack {
-            Button { store.exitQueue() } label: {
-                Text("\(store.queueLabel) ✕")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(store.queueMode == .study ? .white : Theme.primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Capsule().fill(store.queueMode == .study
-                                               ? Theme.warn
-                                               : Theme.primary.opacity(0.12)))
+    private func cardMeta(counter: String, stage: String, queue: String?) -> some View {
+        HStack(spacing: 8) {
+            if let queue {
+                Button { store.exitQueue() } label: {
+                    Text("\(queue) ✕")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Theme.primary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Theme.primary.opacity(0.1)))
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            Text(counter)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(hex: 0x8EA196))
+            Text(stage)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(Theme.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Theme.chip))
             Spacer(minLength: 0)
         }
     }
 
-    private var pointFront: some View {
-        VStack(spacing: 12) {
-            Text(store.currentPoint?.chapter ?? "")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Theme.primary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(Theme.primary.opacity(0.1)))
-
-            Text(store.currentLabel)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundColor(Theme.ink)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.7)
-
-            Spacer(minLength: 6)
-
-            Text("点击卡片翻面看\(store.showEnglish ? "中文" : "英文")解释与 LC 关键词")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(Theme.sub)
+    /// 双面翻卡：正面白→薄荷渐变，背面薄荷→白渐变
+    private func flashCard<Front: View, Back: View>(front: Front, back: Back) -> some View {
+        ZStack {
+            front.opacity(store.flipped ? 0 : 1)
+            back
+                .opacity(store.flipped ? 1 : 0)
+                .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
         }
-        .padding(24)
+        .rotation3DEffect(.degrees(store.flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+        .animation(.easeInOut(duration: 0.42), value: store.flipped)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture { store.flip() }
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Theme.ink.opacity(0.1), radius: 18, x: 0, y: 8)
     }
+
+    // MARK: 知识点正面
+
+    private var pointFront: some View {
+        let point = store.currentPoint
+        let english = store.showEnglish
+        return VStack(spacing: 0) {
+            HStack {
+                tagPill("\(point?.chapter ?? "") · \(store.subject.label)")
+                Spacer(minLength: 0)
+            }
+
+            Spacer(minLength: 10)
+
+            VStack(spacing: 10) {
+                Text(english ? (point?.en ?? "") : (point?.cn ?? ""))
+                    .font(english
+                          ? .system(size: 22, weight: .bold, design: .serif)
+                          : .system(size: 25, weight: .heavy, design: .rounded))
+                    .foregroundColor(english ? Theme.primary : Color(hex: 0x14352A))
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(english ? (point?.cn ?? "") : (point?.en ?? ""))
+                    .font(.system(size: 15, weight: .semibold, design: .serif))
+                    .foregroundColor(Color(hex: 0x128A80))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(english ? (point?.defEn ?? "") : (point?.defCn ?? ""))
+                    .font(.system(size: 13.5, weight: .regular))
+                    .foregroundColor(Color(hex: 0x445D52))
+                    .lineSpacing(4)
+                    .lineLimit(6)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+            }
+
+            Spacer(minLength: 10)
+
+            HStack(spacing: 5) {
+                Text("\(point?.keywords.count ?? 0) 个 LC 关键词")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(Theme.primary)
+                Text("·")
+                    .foregroundColor(Color(hex: 0x8EA196))
+                Text("LC 答题方法")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Color(hex: 0x8EA196))
+            }
+
+            Text("点击卡片查看\(english ? "中文" : "英文")定义 ↻")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(hex: 0x8EA196))
+                .padding(.top, 12)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(colors: [.white, Color(hex: 0xF4FBF7)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
+    }
+
+    // MARK: 知识点背面
 
     private var pointBack: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(store.currentLabel)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(Theme.ink)
+        let point = store.currentPoint
+        let english = store.showEnglish
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(english ? (point?.cn ?? "") : (point?.en ?? ""))
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundColor(Color(hex: 0x14352A))
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                langButton
+            }
+            .padding(.bottom, 10)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Theme.line).frame(height: 1)
+            }
 
-                Text(store.showEnglish
-                     ? (store.currentPoint?.defEn ?? "")
-                     : (store.currentPoint?.defCn ?? ""))
-                    .font(.system(size: 14))
-                    .foregroundColor(Theme.ink)
-                    .lineSpacing(4)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 12) {
+                    block(label: english ? "中文解释" : "Leaving Certificate Definition",
+                          text: english ? (point?.defCn ?? "") : (point?.defEn ?? ""))
 
-                if let keywords = store.currentPoint?.keywords, !keywords.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("LC 关键词").font(.system(size: 12, weight: .bold))
-                            .foregroundColor(Theme.primary)
-                        ForEach(keywords, id: \.en) { word in
-                            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                Text(word.en).font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(Theme.ink)
-                                Text("/ \(word.cn)").font(.system(size: 12))
-                                    .foregroundColor(Theme.sub)
-                            }
-                        }
+                    keywordBlock(point?.keywords ?? [])
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        blockLabel("答题方法 · LC Exam tip")
+                        Text(point?.lcTip ?? "")
+                            .font(.system(size: 13))
+                            .foregroundColor(Color(hex: 0x2E4C41))
+                            .lineSpacing(4)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Theme.accentSoft))
+                    .padding(10)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Theme.chip))
                 }
-
-                if let tip = store.currentPoint?.lcTip {
-                    Text(tip)
-                        .font(.system(size: 12))
-                        .foregroundColor(Theme.sub)
-                        .lineSpacing(3)
-                }
+                .padding(.top, 12)
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.surface))
+        .background(
+            LinearGradient(colors: [Color(hex: 0xEDF7F1), .white],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
     }
 
-    private var deckActions: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 12) {
-                Button { store.rate(-1) } label: {
-                    Text("忘记了 ↻")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: 0xC23B3B))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .fill(Color(hex: 0xC23B3B).opacity(0.1)))
-                }
-                Button { store.rate(1) } label: {
-                    Text("记住了 ✓")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .fill(Theme.primary))
-                }
-            }
-            .buttonStyle(.plain)
-
-            HStack(spacing: 12) {
-                Button { store.showPoint(store.pointIndex - 1) } label: {
-                    Text("← 上一个")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Theme.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Theme.chip))
-                }
-                Button { store.showPoint(store.pointIndex + 1) } label: {
-                    Text("下一个 →")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Theme.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Theme.chip))
-                }
-            }
-            .buttonStyle(.plain)
-
-            Text("评完自动下一张 · 记住了隔更久再背，忘记了明天重来")
-                .font(.system(size: 10.5, weight: .medium))
-                .foregroundColor(Theme.sub)
-                .multilineTextAlignment(.center)
-        }
-    }
-
-    private var deckEmpty: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 34, weight: .light))
-                .foregroundColor(Theme.primary.opacity(0.7))
-            Text(store.reviewedToday > 0 ? "今天的卡片背完了" : "今天没有要背的卡片")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundColor(Theme.ink)
-            Text(store.reviewedToday > 0
-                 ? "今天共背 \(store.reviewedToday) 张 · 明天按 1→2→4→7 天间隔自动排卡"
-                 : "这个科目已全部固化，想回顾去复习计划里翻")
-                .font(.system(size: 12))
-                .foregroundColor(Theme.sub)
-                .multilineTextAlignment(.center)
-            Button { store.selectSegment(.plan) } label: {
-                Text("看复习计划 →")
-            }
-            .buttonStyle(SoftButtonStyle(height: 42))
-            .padding(.horizontal, 24)
-            .padding(.top, 4)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 26)
-        .cardSurface(radius: 22, padding: 16)
-    }
-
-    // MARK: 公式
+    // MARK: 模块二 公式
 
     private var formulaPane: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             if store.queueKind == .formula {
-                queueChip
+                HStack {
+                    Button { store.exitQueue() } label: {
+                        Text("\(store.queueLabel) ✕")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(Theme.primary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Capsule().fill(Theme.primary.opacity(0.1)))
+                    }
+                    .buttonStyle(.plain)
+                    Spacer(minLength: 0)
+                }
             } else {
                 chipRow(store.formulaUnitOptions, active: store.formulaUnitFilter) {
                     store.setFormulaUnitFilter($0)
@@ -348,253 +362,492 @@ struct ScienceView: View {
             }
 
             if let formula = store.currentFormula {
-                cardMeta(text: "第 \(store.formulaIndex + 1) 张 · \(store.stageLabel("f" + formula.id))",
-                         tail: "共 \(store.formulas.count) 张")
+                cardMeta(counter: "\(store.formulaIndex + 1) / \(store.formulas.count)",
+                         stage: store.stageLabel("f" + formula.id),
+                         queue: store.queueKind == .formula ? store.queueLabel : nil)
 
-                ZStack {
-                    formulaFront.opacity(store.flipped ? 0 : 1)
-                    formulaBack
-                        .opacity(store.flipped ? 1 : 0)
-                        .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
-                }
-                .rotation3DEffect(.degrees(store.flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-                .animation(.easeInOut(duration: 0.42), value: store.flipped)
-                .frame(maxWidth: .infinity, minHeight: 320, maxHeight: 380)
-                .contentShape(Rectangle())
-                .onTapGesture { store.flip() }
-                .cardSurface(radius: 22, padding: 0)
-
-                formulaActions
+                flashCard(front: formulaFront, back: formulaBack)
+                actionRow(isFormula: true)
             } else {
-                EmptyHint(text: "该分类暂无公式")
+                EmptyHint(text: "该分类下暂无公式")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .padding(.bottom, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var formulaFront: some View {
-        VStack(spacing: 14) {
-            Text(store.showEnglish ? (store.currentFormula?.en ?? "") : (store.currentFormula?.cn ?? ""))
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(Theme.ink)
-                .multilineTextAlignment(.center)
-
-            formulaLines()
-
-            Spacer(minLength: 4)
-            Text("点击翻面看表达式、条件与 LC 提示")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(Theme.sub)
-        }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    /// 方程式按运算符断行（一行放得下就一行），不让 SwiftUI 在任意空格处折
-    private func formulaLines(centered: Bool = true) -> some View {
-        let layout = EquationLayout.layout(store.currentFormula?.formula ?? "", width: 300)
-        return VStack(alignment: centered ? .center : .leading, spacing: 2) {
-            ForEach(Array(layout.lines.enumerated()), id: \.offset) { _, line in
-                Text(line)
-                    .font(.system(size: layout.fontSize, weight: .semibold, design: .monospaced))
-                    .foregroundColor(Theme.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
-    }
-
-    private var formulaBack: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(store.showEnglish ? (store.currentFormula?.exprEn ?? "") : (store.currentFormula?.expr ?? ""))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(Theme.ink)
-
-                formulaLines(centered: false)
-
-                if let cond = store.currentFormula?.cond, !cond.isEmpty {
-                    Text("条件：\(store.showEnglish ? (store.currentFormula?.condEn ?? cond) : cond)")
-                        .font(.system(size: 13))
-                        .foregroundColor(Theme.sub)
-                }
-
-                Text(store.showEnglish ? (store.currentFormula?.noteEn ?? "") : (store.currentFormula?.noteCn ?? ""))
-                    .font(.system(size: 13))
-                    .foregroundColor(Theme.ink)
-                    .lineSpacing(4)
-
-                if let words = store.currentFormula?.keywords, !words.isEmpty {
-                    Text(words.map { store.showEnglish ? $0.en : $0.cn }.joined(separator: " · "))
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Theme.primary)
-                }
-            }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.surface))
-    }
-
-    private var formulaActions: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 12) {
-                Button { store.rate(-1) } label: {
-                    Text("忘记了")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: 0xC23B3B))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .fill(Color(hex: 0xC23B3B).opacity(0.1)))
-                }
-                Button { store.rate(1) } label: {
-                    Text("记住了")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .fill(Theme.primary))
-                }
-            }
-            .buttonStyle(.plain)
-
-            HStack(spacing: 12) {
-                Button { store.showFormula(store.formulaIndex - 1) } label: {
-                    Text("← 上一个")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Theme.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Theme.chip))
-                }
-                Button { store.showFormula(store.formulaIndex + 1) } label: {
-                    Text("下一个 →")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Theme.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Theme.chip))
-                }
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    // MARK: 自测
-
-    private var quizPane: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 8) {
-                ForEach(ScienceQuizMode.allCases) { mode in
-                    Button { store.setQuizMode(mode) } label: {
-                        Text(mode.label)
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(store.quizMode == mode ? .white : Theme.sub)
-                            .padding(.horizontal, 12)
-                            .frame(height: 34)
-                            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(store.quizMode == mode ? Theme.primary : Theme.chip))
-                    }
-                    .buttonStyle(.plain)
-                }
-                ForEach(ScienceQuizLang.allCases) { lang in
-                    Button { store.setQuizLang(lang) } label: {
-                        Text(lang.label)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(store.quizLang == lang ? Theme.primary : Theme.sub)
-                            .padding(.horizontal, 10)
-                            .frame(height: 34)
-                            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(store.quizLang == lang ? Theme.primary.opacity(0.12) : Theme.chip))
-                    }
-                    .buttonStyle(.plain)
-                }
+        let formula = store.currentFormula
+        let english = store.showEnglish
+        let layout = EquationLayout.layout(formula?.formula ?? "", width: 300)
+        return VStack(spacing: 0) {
+            HStack {
+                tagPill("\(english ? (formula?.en ?? "") : (formula?.cn ?? "")) · \(store.subject.label)")
                 Spacer(minLength: 0)
             }
 
-            HStack {
-                Text("正确率 \(store.quizAccuracy)% · \(store.quizRight)/\(store.quizTotal)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Theme.sub)
-                Spacer()
-                Button("重置") { store.resetStats() }
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Theme.primary)
+            Spacer(minLength: 8)
+
+            Text(english ? (formula?.exprEn ?? "") : (formula?.expr ?? ""))
+                .font(.system(size: 17, weight: .bold))
+                .foregroundColor(Color(hex: 0x14352A))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(spacing: 3) {
+                ForEach(Array(layout.lines.enumerated()), id: \.offset) { _, line in
+                    formulaText(line, size: layout.fontSize)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 14)
+
+            Spacer(minLength: 8)
+
+            Text("点击卡片查看含义与考点 ↻")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(hex: 0x8EA196))
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(colors: [.white, Color(hex: 0xF4FBF7)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
+    }
+
+    /// 运算符灰色、化学式绿色（小程序 eq-op / eq-tok 同款）
+    private func formulaText(_ line: String, size: CGFloat) -> Text {
+        let operators: Set<String> = ["→", "⇌", "⟶", "=", "+", "·", "｜", "|", "÷", "×", "/", "≈"]
+        var result = Text("")
+        for token in line.split(separator: " ").map(String.init) {
+            let color: Color = operators.contains(token)
+                ? Color(hex: 0x7D968A)
+                : Theme.primary
+            result = result + Text(token + " ")
+                .foregroundColor(color)
+                .font(.system(size: size, weight: .heavy, design: .serif))
+        }
+        return result
+    }
+
+    private var formulaBack: some View {
+        let formula = store.currentFormula
+        let english = store.showEnglish
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(english ? (formula?.cn ?? "") : (formula?.en ?? ""))
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundColor(Color(hex: 0x14352A))
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                langButton
+            }
+            .padding(.bottom, 10)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Theme.line).frame(height: 1)
             }
 
-            if let question = store.quiz {
-                VStack(spacing: 14) {
-                    Text(question.prompt)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(Theme.ink)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
-                        .cardSurface(radius: 20, padding: 14)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 12) {
+                    block(label: "条件 · Condition",
+                          text: english ? (formula?.condEn ?? formula?.cond ?? "")
+                                        : (formula?.cond ?? ""))
+                    block(label: english ? "中文说明" : "LC 考点说明",
+                          text: english ? (formula?.noteCn ?? "") : (formula?.noteEn ?? ""))
+                    keywordBlock(formula?.keywords ?? [])
+                }
+                .padding(.top, 12)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(colors: [Color(hex: 0xEDF7F1), .white],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
+    }
 
+    // MARK: 卡片通用零件
+
+    private func tagPill(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundColor(Color(hex: 0x6B8075))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(Theme.chip))
+    }
+
+    private var langButton: some View {
+        Button { store.toggleLanguage() } label: {
+            Text(store.showEnglish ? "中 →" : "EN →")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Theme.primary))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func blockLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundColor(Theme.primary)
+    }
+
+    private func block(label: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            blockLabel(label)
+            Text(text)
+                .font(.system(size: 13.5))
+                .foregroundColor(Color(hex: 0x2E4C41))
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func keywordBlock(_ words: [ScienceKeyword]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            blockLabel("LC 关键词 · Key terms")
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 6)], spacing: 6) {
+                ForEach(words, id: \.en) { word in
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(word.en)
+                            .font(.system(size: 12.5, weight: .bold))
+                            .foregroundColor(Color(hex: 0x14352A))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                        Text(word.cn)
+                            .font(.system(size: 10.5))
+                            .foregroundColor(Color(hex: 0x6B8075))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(Theme.surface)
+                            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(Theme.line, lineWidth: 1))
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 一行四个按钮：← 上一个 / 记住了 ✓ / 忘记了 ↻ / 下一个 →
+    private func actionRow(isFormula: Bool) -> some View {
+        HStack(spacing: 8) {
+            navButton("← 上一个") {
+                if isFormula { store.showFormula(store.formulaIndex - 1) }
+                else { store.showPoint(store.pointIndex - 1) }
+            }
+            rateButton("记住了 ✓", fill: Theme.primary, text: .white) { store.rate(1) }
+            rateButton("忘记了 ↻", fill: Color(hex: 0xF7EBE3), text: Color(hex: 0xB9683C)) { store.rate(-1) }
+            navButton("下一个 →") {
+                if isFormula { store.showFormula(store.formulaIndex + 1) }
+                else { store.showPoint(store.pointIndex + 1) }
+            }
+        }
+    }
+
+    private func navButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Color(hex: 0x445D52))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .stroke(Color(hex: 0xE2EFE8), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func rateButton(_ title: String, fill: Color, text: Color,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(fill))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var rateHint: some View {
+        Text("记住了 → 隔更久再背；忘记了 → 明天重来｜评完自动下一张")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundColor(Color(hex: 0x8EA196))
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+    }
+
+    private var deckEmpty: some View {
+        VStack(spacing: 10) {
+            Text("✓")
+                .font(.system(size: 30, weight: .heavy))
+                .foregroundColor(Theme.primary)
+                .frame(width: 60, height: 60)
+                .background(Circle().fill(Theme.chip))
+
+            Text(store.reviewedToday > 0 ? "今天的卡片背完了" : "今天没有要背的卡片")
+                .font(.system(size: 17, weight: .heavy))
+                .foregroundColor(Color(hex: 0x14352A))
+            Text(store.reviewedToday > 0
+                 ? "今天共背 \(store.reviewedToday) 张 · 明天按 1→2→4→7 天间隔自动排卡"
+                 : "这个科目已全部完成固化，想回顾去复习计划里翻")
+                .font(.system(size: 12))
+                .foregroundColor(Color(hex: 0x6B8075))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button { store.selectSegment(.plan) } label: {
+                Text("看复习计划 →")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Theme.primary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Theme.chip))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 40)
+            .padding(.top, 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(20)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.surface))
+        .shadow(color: Theme.ink.opacity(0.08), radius: 18, x: 0, y: 8)
+    }
+
+    // MARK: 模块三 自测
+
+    private var quizPane: some View {
+        VStack(spacing: 10) {
+            VStack(spacing: 0) {
+                segRow("方式", items: ScienceQuizWay.allCases.map { way in
+                    (title: way.label, active: quizWay == way, action: { quizWay = way })
+                })
+                separator
+                segRow("题目", items: ScienceQuizMode.allCases.map { mode in
+                    (title: mode.label, active: store.quizMode == mode,
+                     action: { store.setQuizMode(mode) })
+                })
+                if quizWay == .choice {
+                    separator
+                    segRow("方向", items: ScienceQuizLang.allCases.map { lang in
+                        (title: lang.label, active: store.quizLang == lang,
+                         action: { store.setQuizLang(lang) })
+                    })
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.surface))
+            .shadow(color: Theme.ink.opacity(0.05), radius: 9, x: 0, y: 3)
+
+            HStack {
+                Text("正确 \(store.quizRight) / \(store.quizTotal)")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Theme.primary)
+                Spacer()
+                Button { store.resetStats() } label: {
+                    Text("重置")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color(hex: 0x8EA196))
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(Color(hex: 0xE6F1EA)))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 4)
+
+            if quizWay == .choice { choiceQuiz } else { recallQuiz }
+        }
+        .padding(.bottom, 12)
+    }
+
+    private var separator: some View {
+        Rectangle().fill(Color(hex: 0xEDF5F0)).frame(height: 1)
+    }
+
+    private func segRow(_ label: String,
+                        items: [(title: String, active: Bool, action: () -> Void)]) -> some View {
+        HStack(spacing: 10) {
+            Text(label)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Color(hex: 0x53675D))
+                .frame(width: 40, alignment: .leading)
+
+            HStack(spacing: 3) {
+                ForEach(items.indices, id: \.self) { index in
+                    Button { items[index].action() } label: {
+                        Text(items[index].title)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(items[index].active ? Theme.primary : Color(hex: 0x5E7368))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 30)
+                            .background(
+                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    .fill(items[index].active ? Theme.surface : Color.clear)
+                                    .shadow(color: items[index].active ? Theme.primary.opacity(0.14) : .clear,
+                                            radius: 5, x: 0, y: 2)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(3)
+            .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(Color(hex: 0xE6F1EA)))
+        }
+        .padding(.vertical, 6)
+    }
+
+    private var choiceQuiz: some View {
+        VStack(spacing: 10) {
+            if let question = store.quiz {
+                VStack(spacing: 0) {
+                    Text("\(store.subject.label) · \(store.quizMode == .point ? "术语" : "公式")")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Theme.primary)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Theme.chip))
+                        .padding(.bottom, 12)
+
+                    Text(question.prompt)
+                        .font(.system(size: 21, weight: .heavy))
+                        .foregroundColor(Color(hex: 0x14352A))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if !question.hint.isEmpty {
+                        Text(question.hint)
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(hex: 0x6B8075))
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 8)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Text("选出正确的\(store.quizLang == .en2zh ? "中文" : "英文")")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color(hex: 0x8EA196))
+                        .padding(.top, 10)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 22)
+                .padding(.horizontal, 15)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.surface))
+                .shadow(color: Theme.ink.opacity(0.07), radius: 14, x: 0, y: 5)
+
+                VStack(spacing: 8) {
                     ForEach(question.options) { option in
                         let isAnswer = option.id == question.answerID
                         let isPicked = option.id == store.quizSelectedID
                         Button { store.answer(option.id) } label: {
-                            HStack {
+                            HStack(spacing: 8) {
                                 Text(option.text)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Theme.ink)
-                                Spacer()
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(Color(hex: 0x14352A))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 4)
                                 if store.quizAnswered && isAnswer {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(Theme.success)
+                                    Text("✓")
+                                        .font(.system(size: 16, weight: .heavy))
+                                        .foregroundColor(Theme.primary)
                                 } else if store.quizAnswered && isPicked {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(Color(hex: 0xC23B3B))
+                                    Text("✗")
+                                        .font(.system(size: 16, weight: .heavy))
+                                        .foregroundColor(Color(hex: 0xD9705F))
                                 }
                             }
                             .padding(.horizontal, 14)
-                            .frame(height: 46)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                RoundedRectangle(cornerRadius: 9, style: .continuous)
                                     .fill(store.quizAnswered && isAnswer
-                                          ? Theme.success.opacity(0.14)
+                                          ? Theme.chip
                                           : (store.quizAnswered && isPicked
-                                             ? Color(hex: 0xC23B3B).opacity(0.12)
+                                             ? Color(hex: 0xFBECEA)
                                              : Theme.surface))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                    .stroke(store.quizAnswered && isAnswer
+                                            ? Color(hex: 0x1F9D63)
+                                            : (store.quizAnswered && isPicked
+                                               ? Color(hex: 0xD9705F) : Theme.line),
+                                            lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
                         .disabled(store.quizAnswered)
                     }
-
-                    if store.quizAnswered {
-                        Text(store.quizCorrect ? "答对了 ✓" : "答错了 · 记忆间隔已缩短")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(store.quizCorrect ? Theme.success : Color(hex: 0xC23B3B))
-                        Button { store.nextQuestion() } label: {
-                            Text("下一题")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
-                                .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Theme.primary))
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
-                .cardSurface(radius: 20, padding: 16)
+
+                if store.quizAnswered {
+                    let answer = question.options.first { $0.id == question.answerID }?.text ?? ""
+                    Text(store.quizCorrect ? "答对了 ✓" : "正确答案：\(answer)")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(store.quizCorrect ? Color(hex: 0x1F9D63) : Color(hex: 0xB9683C))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(store.quizCorrect ? Theme.chip : Color(hex: 0xF7EBE3)))
+
+                    Button { store.nextQuestion() } label: {
+                        Text("下一题 →")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(Theme.primary))
+                    }
+                    .buttonStyle(.plain)
+                }
             } else {
                 EmptyHint(text: "暂无可出题内容")
             }
         }
-        .padding(.bottom, 10)
     }
 
-    // MARK: 复习计划
+    private var recallQuiz: some View {
+        ScienceRecallView(store: store)
+            .id("\(store.subject.rawValue)-\(store.quizMode.rawValue)")
+    }
+
+    // MARK: 模块四 复习计划
 
     private var planPane: some View {
         let buckets = store.planBuckets
@@ -613,9 +866,7 @@ struct ScienceView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
 
-            if store.formulaDueCount > 0 {
-                formulaEntry
-            }
+            if store.formulaDueCount > 0 { formulaEntry }
 
             curveCard
 
@@ -659,19 +910,16 @@ struct ScienceView: View {
                 Image(systemName: "testtube.2")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(Theme.primary)
-
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("公式待复习")
+                    Text("🧪 公式待复习")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(Theme.ink)
                     Text("公式不进每日卡组，单独过一遍")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Theme.sub)
                 }
-
                 Spacer(minLength: 0)
-
-                Text("\(store.formulaDueCount) 条 →")
+                Text("\(store.formulaDueCount) 条")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(Theme.primary)
             }
@@ -699,18 +947,11 @@ struct ScienceView: View {
         let items = store.planBuckets.items(group)
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Text(group.title)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Theme.ink)
-                    Text("\(items.count)")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Theme.primary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Theme.primary.opacity(0.1)))
-                    Spacer(minLength: 0)
-                }
+                Text("\(group.title) · \(items.count)")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(group == .due
+                                     ? Color(hex: 0xC96F24)
+                                     : (group == .graduated ? Theme.success : Theme.ink))
 
                 ForEach(Array(items.prefix(30))) { item in
                     Button { store.focus(item, group: group) } label: {
@@ -730,9 +971,6 @@ struct ScienceView: View {
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(Theme.sub)
                                 .lineLimit(1)
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(Theme.sub.opacity(0.5))
                         }
                         .padding(.vertical, 7)
                     }
@@ -746,36 +984,25 @@ struct ScienceView: View {
                         .padding(.top, 2)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .cardSurface(radius: 18, padding: 14)
         }
     }
 
     // MARK: 通用组件
 
-    private func cardMeta(text: String, tail: String) -> some View {
-        HStack {
-            Text(text)
-            Spacer(minLength: 0)
-            Text(tail)
-        }
-        .font(.system(size: 11, weight: .medium))
-        .foregroundColor(Theme.sub)
-        .padding(.horizontal, 4)
-    }
-
     private func chipRow(_ items: [ScienceUnit], active: String,
                          onSelect: @escaping (String) -> Void) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 ForEach(items) { item in
                     Button { onSelect(item.key) } label: {
                         Text(item.label)
                             .font(.system(size: 12, weight: active == item.key ? .bold : .semibold))
-                            .foregroundColor(active == item.key ? .white : Theme.sub)
+                            .foregroundColor(active == item.key ? .white : Color(hex: 0x5E7368))
                             .padding(.horizontal, 12)
-                            .frame(height: 34)
-                            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(active == item.key ? Theme.primary : Theme.chip))
+                            .frame(height: 32)
+                            .background(Capsule().fill(active == item.key ? Theme.primary : Color(hex: 0xE6F1EA)))
                     }
                     .buttonStyle(.plain)
                 }
@@ -794,13 +1021,13 @@ private struct ProgressTrack: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(Theme.track)
                 Capsule()
-                    .fill(LinearGradient(colors: [Theme.primary, Theme.primarySoft],
+                    .fill(LinearGradient(colors: [Theme.primarySoft, Theme.primary],
                                          startPoint: .leading,
                                          endPoint: .trailing))
                     .frame(width: fraction <= 0 ? 0 : max(6, geo.size.width * min(fraction, 1)))
                     .animation(.easeOut(duration: 0.45), value: fraction)
             }
         }
-        .frame(height: 8)
+        .frame(height: 4)
     }
 }
