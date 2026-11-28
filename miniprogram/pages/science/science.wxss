@@ -89,10 +89,12 @@
   border-color: #0f8a5a;
 }
 
+/* 计数与阶段靠左排：右上角让给悬浮球，避免球压住文字 */
 .card-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 16rpx;
   margin-bottom: 16rpx;
 }
 .card-counter {
@@ -166,6 +168,57 @@
   text-align: center;
   line-height: 1.35;
   padding: 0 10rpx;
+}
+/* 正面不再只有一行标题：中文术语下面补英文术语 + 背面内容摘要 */
+.front-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.term-sub {
+  margin-top: 20rpx;
+  padding: 0 20rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #128a80;
+  font-family: Georgia, 'Times New Roman', serif;
+  text-align: center;
+}
+/* 正面直接给出同语言定义：知识点是「读」的入口，翻面才看另一语言 + 关键词 + 考点 */
+.front-def {
+  width: 100%;
+  margin-top: 28rpx;
+  padding: 0 12rpx;
+  box-sizing: border-box;
+  font-size: 26rpx;
+  line-height: 1.72;
+  color: #445d52;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+}
+.front-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  color: #8ea196;
+}
+.front-meta-key {
+  color: #0f8a5a;
+  font-weight: 700;
+}
+.front-meta-dot {
+  margin: 0 10rpx;
+  opacity: 0.6;
 }
 .term-main.term-en {
   font-size: 42rpx;
@@ -316,7 +369,8 @@
 .quiz-settings {
   background: #ffffff;
   border-radius: 20rpx;
-  padding: 12rpx 24rpx;
+  /* 右侧留出悬浮球的位置，否则「公式配对 / 中→英」两个选项会被球挡住点不到 */
+  padding: 12rpx 220rpx 12rpx 24rpx;
   margin-bottom: 20rpx;
   box-shadow: 0 6rpx 18rpx rgba(16, 38, 29, 0.05);
 }

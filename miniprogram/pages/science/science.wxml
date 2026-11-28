@@ -37,10 +37,19 @@
     <view wx:if="{{point}}" class="flashcard {{pointFlipped ? 'is-flipped' : ''}}" bindtap="flipPoint">
       <view class="face face-front">
         <view class="card-tag">{{point.chapter}} · {{subject === 'bio' ? '生物' : '化学'}}</view>
-        <view class="term-main {{pointLang === 'en' ? 'term-en' : ''}}">
-          {{pointLang === 'en' ? point.en : point.cn}}
+        <view class="front-main">
+          <view class="term-main {{pointLang === 'en' ? 'term-en' : ''}}">
+            {{pointLang === 'en' ? point.en : point.cn}}
+          </view>
+          <view class="term-sub">{{pointLang === 'en' ? point.cn : point.en}}</view>
+          <view class="front-def">{{pointLang === 'en' ? point.defEn : point.defCn}}</view>
         </view>
-        <view class="flip-hint">点击卡片查看{{pointLang === 'en' ? '中文' : '英文'}}解释 ↻</view>
+        <view class="front-meta">
+          <text class="front-meta-key">{{point.keywords.length}} 个 LC 关键词</text>
+          <text class="front-meta-dot">·</text>
+          <text>LC 答题方法</text>
+        </view>
+        <view class="flip-hint">点击卡片查看{{pointLang === 'en' ? '中文' : '英文'}}定义 ↻</view>
       </view>
       <view class="face face-back">
         <view class="back-head">

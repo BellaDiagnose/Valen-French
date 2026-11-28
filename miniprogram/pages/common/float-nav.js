@@ -35,16 +35,16 @@ function syncNavData(ctx, currentKey) {
 }
 
 const BALL_W = 208;
-const BALL_H = 330;
+const BALL_H = 290;
 const OPEN_W = 380;
 const OPEN_H = 580;
 
 function initFloatPosition(ctx) {
   try {
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
-    ctx.setData({ floatX: Math.max(8, info.windowWidth - 120), floatY: 150 });
+    ctx.setData({ floatX: Math.max(8, info.windowWidth - 120), floatY: 120 });
   } catch (e) {
-    ctx.setData({ floatX: 260, floatY: 150 });
+    ctx.setData({ floatX: 260, floatY: 120 });
   }
 }
 

@@ -3,7 +3,7 @@
   position: fixed;
   z-index: 30;
   width: 208rpx;
-  height: 330rpx;
+  height: 290rpx;
   perspective: 1600rpx;
   transition: width 0.3s ease, height 0.3s ease;
 }
