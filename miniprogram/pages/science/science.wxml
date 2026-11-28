@@ -86,7 +86,7 @@
       <view class="btn-rate btn-forget" data-delta="-1" bindtap="ratePoint">忘记了 ↻</view>
       <view class="btn-nav" bindtap="nextPoint">下一个 →</view>
     </view>
-    <view wx:if="{{point}}" class="rate-hint">记住了 → 隔更久再背；忘记了 → 明天重来｜今日还剩 {{pointIds.length - pointIndex - 1}} 张</view>
+    <view wx:if="{{point}}" class="rate-hint">记住了 → 隔更久再背；忘记了 → 明天重来｜评完自动下一张</view>
 
     <!-- 今日卡组清空 -->
     <view wx:if="{{!point}}" class="deck-empty">
