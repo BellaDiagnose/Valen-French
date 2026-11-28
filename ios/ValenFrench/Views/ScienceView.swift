@@ -9,29 +9,33 @@ enum ScienceQuizWay: String, CaseIterable, Identifiable {
 }
 
 /// 科学独立页：七+八年级生物 / 八年级化学
-/// 与法语页、首页平行，共用 RootView 的 PageNavBar；切模块走悬浮球。
+/// 与法语页、首页平行，共用 RootView 的 PageNavBar；切科目走顶栏圆环下拉。
 /// 结构与小程序 pages/science 对齐：四 tab（每日背诵 / 公式 / 自测 / 复习计划）
 struct ScienceView: View {
-    /// 首页模块卡 / 悬浮球进入时指定学科
+    /// 首页模块卡 / 顶栏下拉进入时指定学科
     var initialSubject: ScienceStore.Subject?
-    /// 悬浮球选中的模块交回 RootView 切换根页面
+    /// 顶栏下拉选中的模块交回 RootView 切换根页面
     var onNavigate: (ModuleNavTarget) -> Void
     /// 学科变化同步给 RootView，用于顶栏显示准确的科目名
     var onSubjectChange: (ScienceStore.Subject) -> Void
+    /// 今日已背 / 卡组进度，同步给顶栏圆环
+    var onStatsChange: (Int, Double) -> Void
 
     @StateObject private var store = ScienceStore()
     @State private var quizWay: ScienceQuizWay = .choice
 
     init(initialSubject: ScienceStore.Subject? = nil,
          onNavigate: @escaping (ModuleNavTarget) -> Void = { _ in },
-         onSubjectChange: @escaping (ScienceStore.Subject) -> Void = { _ in }) {
+         onSubjectChange: @escaping (ScienceStore.Subject) -> Void = { _ in },
+         onStatsChange: @escaping (Int, Double) -> Void = { _, _ in }) {
         self.initialSubject = initialSubject
         self.onNavigate = onNavigate
         self.onSubjectChange = onSubjectChange
+        self.onStatsChange = onStatsChange
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             Theme.bg.ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -49,31 +53,31 @@ struct ScienceView: View {
             }
             .padding(.horizontal, 15)
             .padding(.bottom, 12)
-
-            FloatingRingView(target: store.subject == .chem ? .chem : .bio,
-                             value: store.reviewedToday,
-                             unit: "今日",
-                             fraction: store.deckProgress,
-                             onSelect: { target in
-                                 switch target {
-                                 case .chem, .bio:
-                                     store.selectSubject(target == .chem ? .chem : .bio)
-                                 case .enavant, .simple:
-                                     break
-                                 }
-                                 onNavigate(target)
-                             })
-                .padding(.top, 0)
         }
         .toast(text: $store.toast)
         .onAppear {
             if let initialSubject { store.selectSubject(initialSubject) }
             store.refreshDay()
             onSubjectChange(store.subject)
+            pushStats()
         }
         .onChange(of: store.subject) { value in
             onSubjectChange(value)
+            pushStats()
         }
+        .onChange(of: statsToken) { _ in pushStats() }
+        // 顶栏下拉选了另一个学科：本页自己切换（页面不重建）
+        .onChange(of: initialSubject) { value in
+            if let value { store.selectSubject(value) }
+        }
+    }
+
+    private var statsToken: String {
+        "\(store.reviewedToday)/\(store.deckTotal)"
+    }
+
+    private func pushStats() {
+        onStatsChange(store.reviewedToday, store.deckProgress)
     }
 
     private var tabBar: some View {
@@ -164,8 +168,6 @@ struct ScienceView: View {
                 .frame(width: 156)
                 .padding(.top, 6)
         }
-        /* 右上角让给模块导航球（小程序 240rpx ≈ 124pt） */
-        .padding(.trailing, 124)
         .padding(.bottom, 2)
     }
 

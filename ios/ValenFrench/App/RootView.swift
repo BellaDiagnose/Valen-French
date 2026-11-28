@@ -9,6 +9,10 @@ struct PageNavBar: View {
     var subject: String?
     var showHome: Bool = true
     var onHome: () -> Void = {}
+    /// 右侧进度环；nil 时不显示（首页）
+    var ring: NavRingSpec?
+    var ringOpen: Bool = false
+    var onRingTap: () -> Void = {}
 
     var body: some View {
         ZStack {
@@ -39,6 +43,13 @@ struct PageNavBar: View {
                     .buttonStyle(.plain)
                 }
                 Spacer(minLength: 0)
+                if let ring {
+                    NavRingButton(value: ring.value,
+                                  unit: ring.unit,
+                                  fraction: ring.fraction,
+                                  isOpen: ringOpen,
+                                  action: onRingTap)
+                }
             }
             .padding(.horizontal, 14)
         }
@@ -61,12 +72,21 @@ struct RootView: View {
 
     @State private var page: RootPage = .home
     @State private var scienceSubject: ScienceStore.Subject = .bio
+    /// 顶栏科目下拉是否展开
+    @State private var menuOpen = false
+    /// 科学页今日已背 / 卡组进度，由 ScienceView 回报给顶栏圆环
+    @State private var scienceToday = 0
+    @State private var scienceProgress = 0.0
 
     var body: some View {
         VStack(spacing: 0) {
             PageNavBar(title: "BELLA 助手",
                        subject: navSubject,
-                       showHome: page != .home) { goHome() }
+                       showHome: page != .home,
+                       onHome: goHome,
+                       ring: page == .home ? nil : ringSpec,
+                       ringOpen: menuOpen,
+                       onRingTap: toggleMenu)
 
             ZStack(alignment: .topTrailing) {
                 Theme.bg.ignoresSafeArea()
@@ -81,11 +101,31 @@ struct RootView: View {
                 case .science:
                     ScienceView(initialSubject: scienceSubject,
                                 onNavigate: handleNav,
-                                onSubjectChange: { scienceSubject = $0 })
+                                onSubjectChange: { scienceSubject = $0 },
+                                onStatsChange: { today, progress in
+                                    scienceToday = today
+                                    scienceProgress = progress
+                                })
                         .transition(.opacity)
+                }
+
+                if menuOpen {
+                    Color(hex: 0x10261D).opacity(0.07)
+                        .ignoresSafeArea()
+                        .onTapGesture { closeMenu() }
+                        .transition(.opacity)
+
+                    SubjectMenuPanel(current: ringTarget) { target in
+                        closeMenu()
+                        handleNav(target)
+                    }
+                    .padding(.trailing, 12)
+                    .padding(.top, 2)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .topTrailing)))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .animation(.easeOut(duration: 0.18), value: menuOpen)
         }
         .background(Theme.bg.ignoresSafeArea())
         .toast(text: $store.toast)
@@ -94,6 +134,30 @@ struct RootView: View {
                 .environmentObject(store)
                 .interactiveDismissDisabled(true)
         }
+        .onChange(of: page) { _ in menuOpen = false }
+    }
+
+    // MARK: 顶栏圆环
+
+    private var ringTarget: ModuleNavTarget {
+        guard page == .french else {
+            return scienceSubject == .chem ? .chem : .bio
+        }
+        return store.source == .enavant ? .enavant : .simple
+    }
+
+    private var ringSpec: NavRingSpec {
+        page == .french
+            ? NavRingSpec(value: store.ringDays, unit: "天", fraction: store.ringProgress)
+            : NavRingSpec(value: scienceToday, unit: "今日", fraction: scienceProgress)
+    }
+
+    private func toggleMenu() {
+        withAnimation(.easeOut(duration: 0.18)) { menuOpen.toggle() }
+    }
+
+    private func closeMenu() {
+        withAnimation(.easeOut(duration: 0.15)) { menuOpen = false }
     }
 
     /// 顶栏第二行：显示当前页面的**准确科目名**，不再用「科学」这种泛称
@@ -112,26 +176,18 @@ struct RootView: View {
     // MARK: 法语页（与科学页平行，没有「科学速记」二级入口）
 
     private var frenchStack: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(spacing: 0) {
-                TabBarView()
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
-                    .padding(.bottom, 10)
+        VStack(spacing: 0) {
+            TabBarView()
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+                .padding(.bottom, 10)
 
-                content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-
-            FloatingRingView(target: store.source == .enavant ? .enavant : .simple,
-                             value: store.ringDays,
-                             unit: "天",
-                             fraction: store.ringProgress,
-                             onSelect: handleNav)
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    /// 悬浮球里四个科目是平行入口，等价于小程序的 redirectTo（首页由 navbar 的 home 按钮承担）
+    /// 顶栏下拉里四个科目是平行入口，等价于小程序的 redirectTo（首页由 navbar 的 home 按钮承担）
     private func handleNav(_ target: ModuleNavTarget) {
         switch target {
         case .enavant, .simple:

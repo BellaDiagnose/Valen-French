@@ -15,7 +15,7 @@
 		FA000000000000000000002C /* WordBank.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001A /* WordBank.swift */; };
 		FA000000000000000000002D /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001B /* SpeechService.swift */; };
 		FA000000000000000000002E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001C /* Theme.swift */; };
-		FA000000000000000000002F /* FloatingRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001D /* FloatingRingView.swift */; };
+		FA000000000000000000002F /* NavRingMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000001D /* NavRingMenu.swift */; };
 		FA0000000000000000000041 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000040 /* HomeView.swift */; };
 		FA0000000000000000000043 /* RecallJudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000042 /* RecallJudge.swift */; };
 		FA0000000000000000000045 /* ScienceRecallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000044 /* ScienceRecallView.swift */; };
@@ -42,7 +42,7 @@
 		FA000000000000000000001A /* WordBank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordBank.swift; sourceTree = "<group>"; };
 		FA000000000000000000001B /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 		FA000000000000000000001C /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
-		FA000000000000000000001D /* FloatingRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingRingView.swift; sourceTree = "<group>"; };
+		FA000000000000000000001D /* NavRingMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavRingMenu.swift; sourceTree = "<group>"; };
 		FA0000000000000000000040 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		FA0000000000000000000042 /* RecallJudge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecallJudge.swift; sourceTree = "<group>"; };
 		FA0000000000000000000044 /* ScienceRecallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScienceRecallView.swift; sourceTree = "<group>"; };
@@ -131,7 +131,7 @@
 		FA0000000000000000000005 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				FA000000000000000000001D /* FloatingRingView.swift */,
+				FA000000000000000000001D /* NavRingMenu.swift */,
 				FA0000000000000000000040 /* HomeView.swift */,
 				FA0000000000000000000044 /* ScienceRecallView.swift */,
 				FA000000000000000000001E /* CardTabView.swift */,
@@ -242,7 +242,7 @@
 				FA000000000000000000002C /* WordBank.swift in Sources */,
 				FA000000000000000000002D /* SpeechService.swift in Sources */,
 				FA000000000000000000002E /* Theme.swift in Sources */,
-				FA000000000000000000002F /* FloatingRingView.swift in Sources */,
+				FA000000000000000000002F /* NavRingMenu.swift in Sources */,
 				FA0000000000000000000041 /* HomeView.swift in Sources */,
 				FA0000000000000000000043 /* RecallJudge.swift in Sources */,
 				FA0000000000000000000045 /* ScienceRecallView.swift in Sources */,
