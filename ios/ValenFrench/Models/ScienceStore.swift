@@ -161,6 +161,8 @@ final class ScienceStore: ObservableObject {
     @Published var segment: Segment = .point
     @Published var showEnglish = false
     @Published var formulaUnitFilter = ""
+    /// 每日背诵的章节筛选（空 = 全部），与法语课次 chip 同义
+    @Published var pointUnitFilter = ""
     @Published var pointIndex = 0
     @Published var formulaIndex = 0
     @Published var flipped = false
@@ -230,14 +232,59 @@ final class ScienceStore: ObservableObject {
             return
         }
         let now = Date().timeIntervalSince1970
-        deckDue = bank.points(for: subject).compactMap { point -> String? in
+        deckDue = pointsPool.compactMap { point -> String? in
             guard let record = memory[point.id],
                   !record.isGraduated,
                   record.dueAt > 0,
                   record.dueAt <= now else { return nil }
             return point.id
         }.sorted { (memory[$0]?.dueAt ?? 0) < (memory[$1]?.dueAt ?? 0) }
-        deckFresh = ensureNewQueue(day: plan.today).filter { memory[$0] == nil }
+        deckFresh = ensureNewQueue(day: plan.today).filter { id in
+            guard memory[id] == nil else { return false }
+            return pointUnitFilter.isEmpty || pointByID[id]?.unit == pointUnitFilter
+        }
+    }
+
+    /// 当前学科的知识点池，按章节筛选后使用
+    private var pointsPool: [SciencePoint] {
+        let all = bank.points(for: subject)
+        guard !pointUnitFilter.isEmpty else { return all }
+        return all.filter { $0.unit == pointUnitFilter }
+    }
+
+    /// 章节 chip：全部 + 当前学科各章
+    var pointUnitOptions: [ScienceUnit] {
+        [ScienceUnit(key: "", label: "全部章节", book: nil, subject: nil)]
+            + bank.units(for: subject)
+    }
+
+    /// chip 上的短标题（「第13章 血液循环系统…」→「第13章」）
+    func shortUnitLabel(_ unit: ScienceUnit) -> String {
+        guard !unit.key.isEmpty else { return unit.label }
+        return unit.label.split(separator: " ", maxSplits: 1).first.map(String.init) ?? unit.label
+    }
+
+    func unitPointCount(_ key: String) -> Int {
+        let all = bank.points(for: subject)
+        guard !key.isEmpty else { return all.count }
+        return all.filter { $0.unit == key }.count
+    }
+
+    /// 当前筛选章节的完整名称（未筛选时为空）
+    var pointUnitTitle: String {
+        guard !pointUnitFilter.isEmpty else { return "" }
+        return bank.units(for: subject).first { $0.key == pointUnitFilter }?.label ?? ""
+    }
+
+    func setPointUnitFilter(_ key: String) {
+        guard key != pointUnitFilter else { return }
+        pointUnitFilter = key
+        pointIndex = 0
+        flipped = false
+        // 手动筛章等于退出计划队列
+        queueIDs = []
+        queueKind = nil
+        refreshDeck()
     }
 
     var deckIDs: [String] { deckDue + deckFresh }
@@ -287,7 +334,7 @@ final class ScienceStore: ObservableObject {
     /// 今天已经评过的知识点张数（评过即离场，用它与剩余卡组还原今日总量）
     var reviewedToday: Int {
         let today = StudyEngine.dayString()
-        return bank.points(for: subject).filter { point in
+        return pointsPool.filter { point in
             guard let record = memory[point.id], record.lastReview > 0 else { return false }
             return StudyEngine.dayString(Date(timeIntervalSince1970: record.lastReview)) == today
         }.count
@@ -369,6 +416,7 @@ final class ScienceStore: ObservableObject {
         subject = value
         defaults.set(value.rawValue, forKey: Key.subject)
         formulaUnitFilter = ""
+        pointUnitFilter = ""
         pointIndex = 0
         formulaIndex = 0
         flipped = false

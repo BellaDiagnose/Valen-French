@@ -116,6 +116,8 @@ struct ScienceView: View {
 
     private var pointPane: some View {
         VStack(spacing: 10) {
+            unitPicker
+
             deckHead
 
             if let point = store.currentPoint {
@@ -134,12 +136,53 @@ struct ScienceView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// 章节切换：与法语单词卡的课次 chip 同款（横向滚动、双行、选中实心）
+    private var unitPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(store.pointUnitOptions) { unit in
+                    let active = store.pointUnitFilter == unit.key
+                    Button {
+                        store.setPointUnitFilter(unit.key)
+                    } label: {
+                        VStack(spacing: 1) {
+                            Text(store.shortUnitLabel(unit))
+                                .font(.system(size: 13, weight: .semibold))
+                                .lineLimit(1)
+                            Text("\(store.unitPointCount(unit.key)) 条")
+                                .font(.system(size: 10, weight: .medium))
+                                .opacity(0.75)
+                        }
+                        .foregroundColor(active ? .white : Theme.sub)
+                        .padding(.horizontal, 13)
+                        .frame(height: 48)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(active ? Theme.primary : Theme.chip)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+        .frame(height: 52)
+    }
+
+    /// 卡组头标题：选了章节就显示完整章节名
+    private var deckTitle: String {
+        let unit = store.pointUnitTitle
+        return unit.isEmpty ? "\(store.subject.label) · 今日背诵" : "\(store.subject.label) · \(unit)"
+    }
+
     /// 今日卡组头（小程序是裸的文字 + 细进度条，不是白卡）
     private var deckHead: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text("\(store.subject.label) · 今日背诵")
+            Text(deckTitle)
                 .font(.system(size: 14, weight: .bold))
                 .foregroundColor(Color(hex: 0x14352A))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text("今日")
@@ -600,6 +643,21 @@ struct ScienceView: View {
             .frame(maxWidth: .infinity)
     }
 
+    private var emptyTitle: String {
+        if store.reviewedToday > 0 { return "今天的卡片背完了" }
+        return store.pointUnitFilter.isEmpty ? "今天没有要背的卡片" : "本章没有待背卡片"
+    }
+
+    private var emptySub: String {
+        if store.reviewedToday > 0 {
+            return "今天共背 \(store.reviewedToday) 张 · 明天按 1→2→4→7 天间隔自动排卡"
+        }
+        if !store.pointUnitFilter.isEmpty {
+            return "换一章看看，或点「全部章节」回到今日整组"
+        }
+        return "这个科目已全部完成固化，想回顾去复习计划里翻"
+    }
+
     private var deckEmpty: some View {
         VStack(spacing: 10) {
             Text("✓")
@@ -608,12 +666,10 @@ struct ScienceView: View {
                 .frame(width: 60, height: 60)
                 .background(Circle().fill(Theme.chip))
 
-            Text(store.reviewedToday > 0 ? "今天的卡片背完了" : "今天没有要背的卡片")
+            Text(emptyTitle)
                 .font(.system(size: 17, weight: .heavy))
                 .foregroundColor(Color(hex: 0x14352A))
-            Text(store.reviewedToday > 0
-                 ? "今天共背 \(store.reviewedToday) 张 · 明天按 1→2→4→7 天间隔自动排卡"
-                 : "这个科目已全部完成固化，想回顾去复习计划里翻")
+            Text(emptySub)
                 .font(.system(size: 12))
                 .foregroundColor(Color(hex: 0x6B8075))
                 .multilineTextAlignment(.center)
