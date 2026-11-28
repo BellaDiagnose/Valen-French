@@ -9,27 +9,28 @@ enum ScienceQuizWay: String, CaseIterable, Identifiable {
 }
 
 /// 科学独立页：七+八年级生物 / 八年级化学
+/// 与法语页、首页平行，共用 RootView 的 PageNavBar；切模块走悬浮球。
 /// 结构与小程序 pages/science 对齐：四 tab（每日背诵 / 公式 / 自测 / 复习计划）
 struct ScienceView: View {
-    /// 首页模块卡进入时指定学科；为 nil 时沿用上次选择
+    /// 首页模块卡 / 悬浮球进入时指定学科
     var initialSubject: ScienceStore.Subject?
-    var onClose: () -> Void
+    /// 悬浮球选中的模块交回 RootView 切换根页面
+    var onNavigate: (ModuleNavTarget) -> Void
 
     @StateObject private var store = ScienceStore()
     @State private var quizWay: ScienceQuizWay = .choice
 
     init(initialSubject: ScienceStore.Subject? = nil,
-         onClose: @escaping () -> Void = {}) {
+         onNavigate: @escaping (ModuleNavTarget) -> Void = { _ in }) {
         self.initialSubject = initialSubject
-        self.onClose = onClose
+        self.onNavigate = onNavigate
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
+        ZStack(alignment: .topTrailing) {
             Theme.bg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                topBar
                 tabBar
 
                 Group {
@@ -44,45 +45,28 @@ struct ScienceView: View {
             }
             .padding(.horizontal, 15)
             .padding(.bottom, 12)
+
+            FloatingRingView(target: store.subject == .chem ? .chem : .bio,
+                             value: store.reviewedToday,
+                             unit: "今日",
+                             fraction: store.deckProgress,
+                             onSelect: { target in
+                                 switch target {
+                                 case .chem, .bio:
+                                     store.selectSubject(target == .chem ? .chem : .bio)
+                                     onNavigate(target)
+                                 default:
+                                     onNavigate(target)
+                                 }
+                             })
+                .padding(.trailing, 10)
+                .padding(.top, 120)
         }
         .toast(text: $store.toast)
         .onAppear {
             if let initialSubject { store.selectSubject(initialSubject) }
             store.refreshDay()
         }
-    }
-
-    // MARK: 顶部：返回 + 学科切换（替代小程序的悬浮球模块导航）
-
-    private var topBar: some View {
-        HStack(spacing: 10) {
-            Button { onClose() } label: {
-                HStack(spacing: 3) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .bold))
-                    Text("返回")
-                        .font(.system(size: 12, weight: .semibold))
-                }
-                .foregroundColor(Theme.primary)
-                .padding(.horizontal, 10)
-                .frame(height: 28)
-                .background(Capsule().fill(Theme.chip))
-            }
-            .buttonStyle(.plain)
-
-            Spacer(minLength: 0)
-
-            Picker("学科", selection: Binding(
-                get: { store.subject },
-                set: { store.selectSubject($0) }
-            )) {
-                ForEach(ScienceStore.Subject.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 132)
-        }
-        .padding(.top, 8)
-        .padding(.bottom, 2)
     }
 
     private var tabBar: some View {
@@ -173,6 +157,8 @@ struct ScienceView: View {
                 .frame(width: 156)
                 .padding(.top, 6)
         }
+        /* 右上角让给模块导航球（小程序 240rpx ≈ 124pt） */
+        .padding(.trailing, 124)
         .padding(.bottom, 2)
     }
 

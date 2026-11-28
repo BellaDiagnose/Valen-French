@@ -1,132 +1,149 @@
 import SwiftUI
 
+// MARK: - 顶部导航栏
+// 小程序由微信原生 navbar 提供：白底、居中标题、左侧灰色圆形「回首页」按钮。
+// iOS 首页 / 法语页 / 科学页共用同一条，三个页面是平行关系而非弹层。
+struct PageNavBar: View {
+    let title: String
+    var showHome: Bool = true
+    var onHome: () -> Void = {}
+
+    var body: some View {
+        ZStack {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(Color(hex: 0x10261D))
+                .lineLimit(1)
+
+            HStack {
+                if showHome {
+                    Button(action: onHome) {
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(Color(hex: 0x4A5B52))
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(Color(hex: 0xE9EFEA)))
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14)
+        }
+        .frame(height: 44)
+        .background(
+            Rectangle().fill(Color.white).ignoresSafeArea(edges: .top)
+        )
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color(hex: 0xEDF3EF)).frame(height: 0.5)
+        }
+    }
+}
+
+private enum RootPage {
+    case home, french, science
+}
+
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
 
-    @State private var showHome = true
-    @State private var showScience = false
+    @State private var page: RootPage = .home
     @State private var scienceSubject: ScienceStore.Subject = .bio
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Theme.bg.ignoresSafeArea()
+        VStack(spacing: 0) {
+            PageNavBar(title: navTitle, showHome: page != .home) { goHome() }
 
-            if showHome {
-                HomeView(onOpenFrench: openFrench, onOpenScience: openScience)
-                    .transition(.opacity)
-            } else {
-                contentStack
-                    .transition(.opacity)
+            ZStack(alignment: .topTrailing) {
+                Theme.bg.ignoresSafeArea()
+
+                switch page {
+                case .home:
+                    HomeView(onOpenFrench: openFrench, onOpenScience: openScience)
+                        .transition(.opacity)
+                case .french:
+                    frenchStack
+                        .transition(.opacity)
+                case .science:
+                    ScienceView(initialSubject: scienceSubject, onNavigate: handleNav)
+                        .transition(.opacity)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .background(Theme.bg.ignoresSafeArea())
         .toast(text: $store.toast)
         .sheet(isPresented: $store.showForceQuiz) {
             ForceQuizView()
                 .environmentObject(store)
                 .interactiveDismissDisabled(true)
         }
-        .fullScreenCover(isPresented: $showScience) {
-            ScienceView(initialSubject: scienceSubject) { showScience = false }
-        }
     }
 
-    // MARK: 法语页
+    private var navTitle: String {
+        page == .science ? "BELLA 助手 · 科学" : "BELLA 助手"
+    }
 
-    private var contentStack: some View {
+    private func goHome() {
+        withAnimation(.easeOut(duration: 0.2)) { page = .home }
+    }
+
+    // MARK: 法语页（与科学页平行，没有「科学速记」二级入口）
+
+    private var frenchStack: some View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 0) {
-                homeBar
-
                 TabBarView()
                     .padding(.horizontal, 16)
-                    .padding(.top, 2)
+                    .padding(.top, 10)
                     .padding(.bottom, 10)
-
-                scienceEntry
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                    .padding(.trailing, 108)
 
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
-            FloatingRingView()
-                .padding(.trailing, 14)
-                .padding(.top, 4)
+            FloatingRingView(target: store.source == .enavant ? .enavant : .simple,
+                             value: store.ringDays,
+                             unit: "天",
+                             fraction: store.ringProgress,
+                             onSelect: handleNav)
+                .padding(.trailing, 10)
+                .padding(.top, 120)
         }
     }
 
-    /// 返回首页（小程序走 navigateBack，iOS 自绘一条）
-    private var homeBar: some View {
-        HStack(spacing: 8) {
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) { showHome = true }
-            } label: {
-                HStack(spacing: 3) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .bold))
-                    Text("首页")
-                        .font(.system(size: 12, weight: .semibold))
-                }
-                .foregroundColor(Theme.primary)
-                .padding(.horizontal, 10)
-                .frame(height: 28)
-                .background(Capsule().fill(Theme.chip))
+    /// 悬浮球里五个模块是平行入口，等价于小程序的 redirectTo / navigateBack
+    private func handleNav(_ target: ModuleNavTarget) {
+        switch target {
+        case .home:
+            goHome()
+        case .enavant, .simple:
+            let source: WordSource = target == .enavant ? .enavant : .simple
+            if store.source != source { store.switchSource(source) }
+            store.selectTab(.card)
+            withAnimation(.easeOut(duration: 0.2)) { page = .french }
+        case .chem, .bio:
+            let subject: ScienceStore.Subject = target == .chem ? .chem : .bio
+            if page == .science {
+                // 已在科学页：让 ScienceView 自己切学科，只同步下次进入的默认值
+                scienceSubject = subject
+            } else {
+                scienceSubject = subject
+                withAnimation(.easeOut(duration: 0.2)) { page = .science }
             }
-            .buttonStyle(.plain)
-
-            Spacer(minLength: 0)
-
-            Text(store.source.label)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(Theme.sub)
-                .lineLimit(1)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 6)
-        .padding(.trailing, 100)
     }
 
     private func openFrench(_ source: WordSource, _ tab: AppStore.Tab) {
         if store.source != source { store.switchSource(source) }
         store.selectTab(tab)
         if tab == .quiz { store.buildQuiz() }
-        withAnimation(.easeOut(duration: 0.2)) { showHome = false }
+        withAnimation(.easeOut(duration: 0.2)) { page = .french }
     }
 
     private func openScience(_ subject: ScienceStore.Subject) {
         scienceSubject = subject
-        showScience = true
-    }
-
-    /// 独立科学页入口（避开右上角悬浮球）
-    private var scienceEntry: some View {
-        Button { openScience(.bio) } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "atom")
-                    .font(.system(size: 15, weight: .semibold))
-                Text("科学速记 · 生物 / 化学")
-                    .font(.system(size: 13, weight: .bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                Spacer(minLength: 2)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-            }
-            .foregroundColor(Theme.primary)
-            .padding(.horizontal, 14)
-            .frame(height: 40)
-            .background(
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(Theme.surface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .stroke(Theme.line, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
+        withAnimation(.easeOut(duration: 0.2)) { page = .science }
     }
 
     @ViewBuilder
@@ -146,7 +163,7 @@ struct RootView: View {
     }
 }
 
-// MARK: - 顶部胶囊导航
+// MARK: - 顶部胶囊 Tab
 
 struct TabBarView: View {
     @EnvironmentObject private var store: AppStore

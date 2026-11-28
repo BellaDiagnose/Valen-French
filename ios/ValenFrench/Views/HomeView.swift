@@ -181,33 +181,42 @@ struct HomeView: View {
     @State private var appeared = false
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 10) {
-                hero
-                ringsCard
+        GeometryReader { geo in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 10) {
+                    hero
+                    ringsCard
 
-                HStack(alignment: .top, spacing: 10) {
-                    moduleCard(snapshot.modules[safe: 0])
-                    moduleCard(snapshot.modules[safe: 1])
-                }
-                HStack(alignment: .top, spacing: 10) {
-                    moduleCard(snapshot.modules[safe: 2])
-                    moduleCard(snapshot.modules[safe: 3])
-                }
+                    HStack(alignment: .top, spacing: 10) {
+                        moduleCard(snapshot.modules[safe: 0], height: moduleHeight(geo))
+                        moduleCard(snapshot.modules[safe: 1], height: moduleHeight(geo))
+                    }
+                    HStack(alignment: .top, spacing: 10) {
+                        moduleCard(snapshot.modules[safe: 2], height: moduleHeight(geo))
+                        moduleCard(snapshot.modules[safe: 3], height: moduleHeight(geo))
+                    }
 
-                rhythmCard
+                    rhythmCard
+                }
+                .padding(.horizontal, 15)
+                .padding(.top, 12)
+                .padding(.bottom, 16)
+                .frame(minHeight: geo.size.height, alignment: .top)
             }
-            .padding(.horizontal, 15)
-            .padding(.top, 6)
-            .padding(.bottom, 28)
         }
-        .background(Theme.bg.ignoresSafeArea())
+        .background(Theme.bg)
         .onAppear {
             snapshot = HomeSnapshot.load()
             withAnimation(.easeOut(duration: 0.28)) { appeared = true }
         }
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 8)
+    }
+
+    /// 四张模块卡吃掉剩余高度，避免高屏下方留一大片空白
+    private func moduleHeight(_ geo: GeometryProxy) -> CGFloat {
+        let fixed: CGFloat = 156 + 125 + 78 + 10 * 4 + 12 + 16
+        return min(232, max(172, (geo.size.height - fixed) / 2))
     }
 
     // MARK: Hero
@@ -321,7 +330,7 @@ struct HomeView: View {
     // MARK: 模块卡
 
     @ViewBuilder
-    private func moduleCard(_ module: HomeModule?) -> some View {
+    private func moduleCard(_ module: HomeModule?, height: CGFloat) -> some View {
         if let module = module {
             Button {
                 if module.isScience {
@@ -387,7 +396,7 @@ struct HomeView: View {
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 172, alignment: .topLeading)
+                .frame(height: height, alignment: .topLeading)
                 .background(RoundedRectangle(cornerRadius: 15, style: .continuous).fill(Theme.surface))
                 .overlay(alignment: .top) {
                     Rectangle()
@@ -399,7 +408,7 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
         } else {
-            Color.clear.frame(maxWidth: .infinity, minHeight: 172)
+            Color.clear.frame(maxWidth: .infinity, minHeight: height)
         }
     }
 
