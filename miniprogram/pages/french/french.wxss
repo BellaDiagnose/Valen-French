@@ -1,4 +1,5 @@
 /* pages/french/french.wxss —— 中学生风格：清爽、专注、对比清晰 */
+@import "../common/float-nav.wxss";
 
 .page {
   min-height: 100vh;
@@ -11,48 +12,6 @@
 /* ============ 顶部 ============ */
 .header {
   padding: 24rpx 8rpx 8rpx;
-}
-
-/* ============ 科学入口 ============ */
-.science-entry {
-  display: flex;
-  align-items: center;
-  width: 62%;
-  min-height: 120rpx;
-  margin: 16rpx 0 8rpx;
-  padding: 18rpx 22rpx;
-  background: linear-gradient(135deg, #ffffff 0%, #e4f1e9 100%);
-  border: 2rpx solid #d7e7dd;
-  border-radius: 22rpx;
-  box-shadow: 0 8rpx 20rpx rgba(16, 38, 29, 0.07);
-}
-.science-entry-icon {
-  font-size: 44rpx;
-  margin-right: 16rpx;
-  flex-shrink: 0;
-}
-.science-entry-text {
-  flex: 1;
-  min-width: 0;
-}
-.science-entry-title {
-  font-size: 26rpx;
-  font-weight: 800;
-  color: #0f8a5a;
-  line-height: 1.3;
-}
-.science-entry-sub {
-  font-size: 19rpx;
-  color: #6b8075;
-  line-height: 1.35;
-  margin-top: 6rpx;
-}
-.science-entry-arrow {
-  flex-shrink: 0;
-  font-size: 34rpx;
-  font-weight: 700;
-  color: #0f8a5a;
-  margin-left: 12rpx;
 }
 
 /* ============ Tab ============ */
@@ -778,124 +737,6 @@
   font-size: 26rpx;
   color: #0f8a5a;
   padding: 24rpx 0 8rpx;
-}
-
-/* ============ 悬浮球（可拖动 / 点击翻转） ============ */
-.float-ball {
-  position: fixed;
-  z-index: 30;
-  width: 200rpx;
-  height: 240rpx;
-  perspective: 1600rpx;
-}
-.float-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
-}
-.float-inner.is-flipped { transform: rotateY(180deg); }
-.float-face {
-  position: absolute;
-  inset: 0;
-  border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.95);
-  border: 2rpx solid #e2efe8;
-  box-shadow: 0 10rpx 30rpx rgba(16, 38, 29, 0.14);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  padding: 16rpx 12rpx;
-}
-.float-front { transform: rotateY(0deg); }
-.float-back {
-  transform: rotateY(180deg);
-  justify-content: flex-start;
-  padding-top: 24rpx;
-}
-/* 正面：进度环 */
-.ring-track {
-  position: relative;
-  width: 128rpx;
-  height: 128rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.ring-track::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: #e8f1ec;
-  z-index: -1;
-}
-.ring-inner {
-  width: 98rpx;
-  height: 98rpx;
-  border-radius: 50%;
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 2rpx 10rpx rgba(16, 38, 29, 0.05);
-}
-.ring-num {
-  font-size: 46rpx;
-  font-weight: 800;
-  color: #0f8a5a;
-  line-height: 1;
-}
-.ring-unit {
-  font-size: 20rpx;
-  color: #5e7368;
-  margin-top: 2rpx;
-}
-/* 背面：词库选择 */
-.float-back-title {
-  font-size: 24rpx;
-  font-weight: 700;
-  color: #14352a;
-  margin-bottom: 18rpx;
-}
-.float-source {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18rpx 20rpx;
-  margin-bottom: 12rpx;
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #5e7368;
-  background: #f0f7f3;
-  border: 2rpx solid transparent;
-  border-radius: 12rpx;
-}
-.float-source.active {
-  color: #0f8a5a;
-  background: #f4fbf7;
-  border-color: #0f8a5a;
-}
-.float-source-check { color: #0f8a5a; font-weight: 700; }
-.float-back-hint {
-  margin-top: 6rpx;
-  font-size: 19rpx;
-  color: #a4adc5;
-}
-.done-tag {
-  font-size: 22rpx;
-  color: #1f9d63;
-  background: #e7f7ef;
-  padding: 4rpx 14rpx;
-  border-radius: 999rpx;
 }
 
 /* ============ 知识点速查 ============ */

@@ -1,4 +1,5 @@
 /* pages/science/science.wxss —— 与法语页一致的爱尔兰绿医疗主题 */
+@import "../common/float-nav.wxss";
 
 .page {
   min-height: 100vh;
@@ -8,100 +9,20 @@
   color: #10261d;
 }
 
-/* ============ 顶部 ============ */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 28rpx 8rpx 8rpx;
-}
-.brand-title {
-  font-size: 38rpx;
-  font-weight: 800;
-  color: #14352a;
-  letter-spacing: 1rpx;
-}
-.brand-sub {
-  font-size: 22rpx;
-  color: #6b8075;
-  margin-top: 6rpx;
-}
-.ring-track {
-  position: relative;
-  width: 128rpx;
-  height: 128rpx;
-  border-radius: 50%;
-  background: #e8f1ec;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.ring-bar {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 8rpx;
-  background: linear-gradient(90deg, #0f8a5a, #22ac70);
-  transition: width 0.5s ease;
-}
-.ring-inner {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: baseline;
-}
-.ring-num {
-  font-size: 42rpx;
-  font-weight: 800;
-  color: #0f8a5a;
-}
-.ring-unit {
-  font-size: 20rpx;
-  color: #6b8075;
-  margin-left: 4rpx;
-}
-
-/* ============ 学科切换 ============ */
-.subjects {
-  display: flex;
-  gap: 16rpx;
-  margin: 24rpx 0 16rpx;
-}
-.subject {
-  flex: 1;
-  text-align: center;
-  padding: 20rpx 0;
-  border-radius: 20rpx;
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #53675d;
-  background: #e6f1ea;
-  border: 2rpx solid transparent;
-  transition: all 0.2s ease;
-}
-.subject.active {
-  color: #ffffff;
-  background: #0f8a5a;
-  border-color: #0f8a5a;
-  box-shadow: 0 6rpx 16rpx rgba(15, 138, 90, 0.22);
-}
-
 /* ============ Tab ============ */
 .tabs {
   display: flex;
   background: #e3f0e9;
   border-radius: 26rpx;
   padding: 10rpx;
-  margin: 8rpx 0 28rpx;
+  margin: 20rpx 0 32rpx;
   box-shadow: 0 6rpx 20rpx rgba(16, 38, 29, 0.06);
 }
 .tab {
   flex: 1;
   text-align: center;
-  padding: 22rpx 0;
-  font-size: 28rpx;
+  padding: 26rpx 0;
+  font-size: 30rpx;
   font-weight: 700;
   white-space: nowrap;
   color: #53675d;
@@ -128,31 +49,44 @@
 }
 
 /* ============ 分类 chip ============ */
+/* scroll-view 横向排列用 inline-block（enable-flex 会让内容整体溢出上边缘被裁切），
+   容器高度写死 64rpx 与 chip 同高 */
 .chip-row {
-  display: flex;
   white-space: nowrap;
   width: 100%;
+  height: 64rpx;
   margin-bottom: 20rpx;
-  padding-bottom: 6rpx;
 }
 .chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;
+  box-sizing: border-box;
   height: 64rpx;
+  line-height: 64rpx;
   padding: 0 24rpx;
   margin-right: 12rpx;
+  vertical-align: top;
+  text-align: center;
   color: #5e7368;
   background: #e6f1ea;
   border-radius: 999rpx;
   font-size: 24rpx;
   font-weight: 600;
-  flex-shrink: 0;
 }
 .chip.active {
   color: #ffffff;
   background: #0f8a5a;
   box-shadow: 0 4rpx 12rpx rgba(15, 138, 90, 0.25);
+}
+.grade-row {
+  margin-bottom: 8rpx;
+}
+.grade-row .chip {
+  background: #ffffff;
+  border: 2rpx solid #cfe3d6;
+}
+.grade-row .chip.active {
+  background: #0f8a5a;
+  border-color: #0f8a5a;
 }
 
 .card-meta {

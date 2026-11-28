@@ -1,0 +1,223 @@
+/* pages/home/home.wxss —— Bento landing page，爱尔兰绿白底医疗风 */
+
+.home-page {
+  min-height: 100vh;
+  padding: 8rpx 30rpx 60rpx;
+  box-sizing: border-box;
+  background: #f2f8f4;
+  color: #10261d;
+  animation: homeRise 0.25s ease;
+}
+
+@keyframes homeRise {
+  from { opacity: 0; transform: translateY(12rpx); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.bento-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 300rpx;
+  margin-bottom: 20rpx;
+  padding: 32rpx;
+  border-radius: 36rpx;
+  box-sizing: border-box;
+  color: #ffffff;
+  background: radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.24), transparent 46%),
+              linear-gradient(135deg, #053a28, #0f8a5a 64%, #22ac70);
+  box-shadow: 0 16rpx 36rpx rgba(5, 58, 40, 0.18);
+}
+.hero-copy { flex: 1; min-width: 0; }
+.hero-kicker {
+  display: block;
+  font-size: 19rpx;
+  font-weight: 800;
+  letter-spacing: 3rpx;
+  opacity: 0.8;
+}
+.hero-title {
+  margin-top: 10rpx;
+  font-size: 38rpx;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.hero-desc {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  opacity: 0.9;
+}
+.hero-streak {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 130rpx;
+  height: 130rpx;
+  margin-left: 12rpx;
+  border-radius: 34rpx;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+}
+.hero-streak-num { font-size: 46rpx; font-weight: 800; line-height: 1.1; }
+.hero-streak-unit { margin-top: 6rpx; font-size: 17rpx; font-weight: 700; opacity: 0.84; }
+
+.bento-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+.bento-module {
+  width: calc(50% - 10rpx);
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 10rpx 26rpx rgba(16, 38, 29, 0.07);
+}
+
+/* Apple Watch 风格：外今日 / 中记忆 / 内固化，三色同心环 */
+.bento-rings {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 240rpx;
+  padding: 26rpx;
+  display: flex;
+  align-items: center;
+  gap: 26rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 10rpx 26rpx rgba(16, 38, 29, 0.07);
+}
+.rings-wrap {
+  flex-shrink: 0;
+  width: 184rpx;
+  height: 184rpx;
+}
+.ring-disc,
+.ring-mask,
+.ring-core {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.ring-outer { width: 184rpx; height: 184rpx; padding: 24rpx; }
+.ring-mask { width: 100%; height: 100%; background: #ffffff; }
+.ring-middle { width: 100%; height: 100%; padding: 20rpx; }
+.ring-inner { width: 100%; height: 100%; padding: 18rpx; }
+.ring-core {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  background: #ffffff;
+}
+.ring-core-num { font-size: 32rpx; font-weight: 800; line-height: 1.1; color: #10261d; }
+.ring-core-unit { margin-top: 2rpx; font-size: 17rpx; font-weight: 700; color: #6b8075; }
+.rings-info { flex: 1; min-width: 0; }
+.rings-label { font-size: 21rpx; font-weight: 700; color: #6b8075; }
+.rings-caption { margin-top: 6rpx; font-size: 19rpx; font-weight: 600; color: #8ea196; }
+.rings-caption-b { color: #10261d; font-weight: 800; }
+.ring-legend { margin-top: 14rpx; display: flex; flex-direction: column; gap: 10rpx; }
+.ring-legend-row { display: flex; align-items: center; gap: 10rpx; font-size: 19rpx; font-weight: 700; }
+.ring-dot { flex-shrink: 0; width: 14rpx; height: 14rpx; border-radius: 50%; }
+.ring-legend-label { flex: 1; min-width: 0; color: #6b8075; }
+.ring-legend-value { font-size: 20rpx; color: #10261d; }
+.ring-legend-tone { min-width: 66rpx; text-align: right; color: #8ea196; }
+.stat-label { font-size: 21rpx; font-weight: 700; color: #6b8075; }
+
+.bento-bar {
+  height: 12rpx;
+  border-radius: 999rpx;
+  background: #e6f0ea;
+  overflow: hidden;
+}
+.bento-bar-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #0f8a5a, #22ac70);
+}
+
+.bento-module {
+  position: relative;
+  min-height: 306rpx;
+  padding: 26rpx;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.module-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+}
+.module-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.module-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 18rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+  letter-spacing: 1rpx;
+}
+.module-go { font-size: 28rpx; font-weight: 700; color: #8ea196; }
+.module-name { margin-top: 12rpx; font-size: 28rpx; font-weight: 800; line-height: 1.2; }
+.module-sub { min-height: 52rpx; margin-top: 6rpx; font-size: 19rpx; font-weight: 600; line-height: 1.35; color: #6b8075; }
+.module-progress-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 8rpx;
+}
+.module-percent { font-size: 42rpx; font-weight: 800; line-height: 1; }
+.module-studied { font-size: 19rpx; font-weight: 700; color: #6b8075; }
+.bento-module .bento-bar { margin-top: 12rpx; height: 10rpx; }
+.module-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14rpx;
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #8ea196;
+}
+
+.bento-next {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 150rpx;
+  padding: 24rpx 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
+  box-shadow: 0 10rpx 26rpx rgba(16, 38, 29, 0.07);
+}
+.next-copy { flex: 1; min-width: 0; }
+.next-title { margin-top: 8rpx; font-size: 26rpx; font-weight: 800; }
+.next-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12rpx;
+}
+.next-pill {
+  padding: 12rpx 20rpx;
+  border-radius: 14rpx;
+  background: #e4f1e9;
+  color: #0f8a5a;
+  font-size: 21rpx;
+  font-weight: 700;
+}

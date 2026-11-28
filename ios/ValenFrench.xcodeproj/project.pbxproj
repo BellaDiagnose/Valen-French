@@ -23,6 +23,10 @@
 		FA0000000000000000000034 /* PointsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000022 /* PointsTabView.swift */; };
 		FA0000000000000000000035 /* ForceQuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000023 /* ForceQuizView.swift */; };
 		FA0000000000000000000036 /* Words.json in Resources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000024 /* Words.json */; };
+		FA000000000000000000003B /* ScienceBank.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000037 /* ScienceBank.swift */; };
+		FA000000000000000000003C /* ScienceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000038 /* ScienceStore.swift */; };
+		FA000000000000000000003D /* ScienceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000039 /* ScienceView.swift */; };
+		FA000000000000000000003E /* Science.json in Resources */ = {isa = PBXBuildFile; fileRef = FA000000000000000000003A /* Science.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +46,10 @@
 		FA0000000000000000000022 /* PointsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsTabView.swift; sourceTree = "<group>"; };
 		FA0000000000000000000023 /* ForceQuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceQuizView.swift; sourceTree = "<group>"; };
 		FA0000000000000000000024 /* Words.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Words.json; sourceTree = "<group>"; };
+		FA0000000000000000000037 /* ScienceBank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScienceBank.swift; sourceTree = "<group>"; };
+		FA0000000000000000000038 /* ScienceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScienceStore.swift; sourceTree = "<group>"; };
+		FA0000000000000000000039 /* ScienceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScienceView.swift; sourceTree = "<group>"; };
+		FA000000000000000000003A /* Science.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Science.json; sourceTree = "<group>"; };
 		FA0000000000000000000025 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FA0000000000000000000026 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FA0000000000000000000009 /* ValenFrench.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ValenFrench.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -90,6 +98,8 @@
 				FA0000000000000000000018 /* Models.swift */,
 				FA0000000000000000000019 /* StudyEngine.swift */,
 				FA000000000000000000001A /* WordBank.swift */,
+				FA0000000000000000000037 /* ScienceBank.swift */,
+				FA0000000000000000000038 /* ScienceStore.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -120,6 +130,7 @@
 				FA0000000000000000000021 /* PlanTabView.swift */,
 				FA0000000000000000000022 /* PointsTabView.swift */,
 				FA0000000000000000000023 /* ForceQuizView.swift */,
+				FA0000000000000000000039 /* ScienceView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -128,6 +139,7 @@
 			isa = PBXGroup;
 			children = (
 				FA0000000000000000000024 /* Words.json */,
+				FA000000000000000000003A /* Science.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -200,6 +212,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA0000000000000000000036 /* Words.json in Resources */,
+				FA000000000000000000003E /* Science.json in Resources */,
 				FA0000000000000000000025 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -226,6 +239,9 @@
 				FA0000000000000000000033 /* PlanTabView.swift in Sources */,
 				FA0000000000000000000034 /* PointsTabView.swift in Sources */,
 				FA0000000000000000000035 /* ForceQuizView.swift in Sources */,
+				FA000000000000000000003B /* ScienceBank.swift in Sources */,
+				FA000000000000000000003C /* ScienceStore.swift in Sources */,
+				FA000000000000000000003D /* ScienceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

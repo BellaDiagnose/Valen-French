@@ -5,7 +5,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  * 1) 预缓存（install）：App Shell 全部静态资源 + 词库数据一次性写入
  *    `bella-shell-<版本>`。策略为 cache-first，冷启动 0 网络请求即可渲染。
- * 2) 词库数据 `data/words.json`：随版本号变化而整体替换，
+ * 2) 词库数据 `data/words.json` / `data/science.json`：随版本号变化而整体替换，
  *    运行期只读 → cache-first，不做过期校验（避免离线时被网络抖动拖累）。
  * 3) 其余静态资源（css/js/图标）：stale-while-revalidate ——
  *    先返回缓存保证秒开，后台静默拉新写入下一版本缓存。
@@ -21,7 +21,7 @@
  * 因此更新 App Shell 不会丢进度；离线状态下写入同样安全。
  * ========================================================================= */
 
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.4.1';
 const SHELL_CACHE = `bella-shell-${VERSION}`;
 const DATA_CACHE = `bella-data-${VERSION}`;
 const KEEP = [SHELL_CACHE, DATA_CACHE];
@@ -33,6 +33,7 @@ const PRECACHE = [
   './app.js',
   './manifest.webmanifest',
   './data/words.json',
+  './data/science.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',

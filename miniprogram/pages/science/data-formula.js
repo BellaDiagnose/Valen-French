@@ -373,7 +373,7 @@ const formulas = [
     formula: 'Zn(s) + H₂SO₄(aq) → ZnSO₄(aq) + H₂(g)',
     cond: '常温，稀硫酸或稀盐酸',
     condEn: 'room temperature, dilute acid',
-    noteCn: '置换反应。氢前金属能置换酸中的氢；铜等氢后金属不能。',
+    noteCn: '置换反应。氢前金属能置换酸中的氢；铜等氢后金属不能。【教材校对：酸碱反应属初三内容，上海初二教材未涉及，此处为 LC 衔接预习】',
     noteEn: 'A displacement reaction. Metals above hydrogen in the reactivity series liberate H₂; copper does not.',
     keywords: [
       { en: 'displacement', cn: '置换反应' },
@@ -406,7 +406,7 @@ const formulas = [
     formula: 'HCl(aq) + NaOH(aq) → NaCl(aq) + H₂O(l)',
     cond: '滴加至指示剂变色（终点）',
     condEn: 'add until the indicator changes colour (end point)',
-    noteCn: '本质离子方程式：H⁺(aq) + OH⁻(aq) → H₂O(l)。',
+    noteCn: '本质离子方程式：H⁺(aq) + OH⁻(aq) → H₂O(l)。【教材校对：酸碱中和属初三内容，上海初二教材未涉及，此处为 LC 衔接预习】',
     noteEn: 'Net ionic equation: H⁺(aq) + OH⁻(aq) → H₂O(l). Na⁺ and Cl⁻ are spectator ions.',
     keywords: [
       { en: 'neutralisation', cn: '中和' },
@@ -423,7 +423,7 @@ const formulas = [
     formula: 'Na₂CO₃(s) + 2HCl(aq) → 2NaCl(aq) + H₂O(l) + CO₂(g)',
     cond: '常温',
     condEn: 'room temperature',
-    noteCn: '检验碳酸根：加稀盐酸产生能使石灰水变浑浊的气体。',
+    noteCn: '检验碳酸根：加稀盐酸产生能使石灰水变浑浊的气体。【教材校对：碳酸盐与酸属初三内容，上海初二教材未涉及，此处为 LC 衔接预习】',
     noteEn: 'Test for carbonate: add dilute acid; the gas evolved turns limewater milky.',
     keywords: [
       { en: 'carbonate ion', cn: '碳酸根' },

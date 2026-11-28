@@ -1,0 +1,94 @@
+<!--pages/home/home.wxml —— BELLA 助手独立 landing page-->
+<view class="home-page">
+
+  <view class="bento-hero">
+    <view class="hero-copy">
+      <text class="hero-kicker">BELLA · DAILY</text>
+      <view class="hero-title">四个模块，一起向前</view>
+      <view class="hero-desc">待复习 {{due}} 项 · 今日新词 {{target}} · 连续 {{streak}} 天</view>
+    </view>
+    <view class="hero-streak">
+      <text class="hero-streak-num">{{streak}}</text>
+      <text class="hero-streak-unit">连续天数</text>
+    </view>
+  </view>
+
+  <view class="bento-grid">
+    <view class="bento-rings">
+      <view class="rings-wrap">
+        <view
+          class="ring-disc ring-outer"
+          style="background: conic-gradient(#0f8a5a 0 {{rings[0].tone}}%, #e6f0ea {{rings[0].tone}}% 100%)"
+        >
+          <view class="ring-mask ring-mask-outer">
+            <view
+              class="ring-disc ring-middle"
+              style="background: conic-gradient(#d6a13c 0 {{rings[1].tone}}%, #e6f0ea {{rings[1].tone}}% 100%)"
+            >
+              <view class="ring-mask ring-mask-middle">
+                <view
+                  class="ring-disc ring-inner"
+                  style="background: conic-gradient(#3e7f9e 0 {{rings[2].tone}}%, #e6f0ea {{rings[2].tone}}% 100%)"
+                >
+                  <view class="ring-core">
+                    <text class="ring-core-num">{{percent}}%</text>
+                    <text class="ring-core-unit">今日</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="rings-info">
+        <view class="rings-label">学习状态</view>
+        <view class="rings-caption">待复习 <text class="rings-caption-b">{{due}}</text> 项 · 累计 {{totalStudied}} 词</view>
+        <view class="ring-legend">
+          <view class="ring-legend-row" wx:for="{{rings}}" wx:key="key">
+            <view class="ring-dot" style="background: {{item.color}}"></view>
+            <text class="ring-legend-label">{{item.label}}</text>
+            <text class="ring-legend-value">{{item.value}}</text>
+            <text class="ring-legend-tone">{{item.tone}}%</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view
+      wx:for="{{modules}}" wx:key="key"
+      class="bento-module" data-key="{{item.key}}" bindtap="onModuleTap"
+    >
+      <view class="module-accent" style="background: {{item.accent}}"></view>
+      <view class="module-top">
+        <view class="module-mark" style="background: {{item.tint}}; color: {{item.accent}}">{{item.mark}}</view>
+        <view class="module-go">↗</view>
+      </view>
+      <view class="module-name">{{item.name}}</view>
+      <view class="module-sub">{{item.sub}}</view>
+      <view class="module-progress-row">
+        <text class="module-percent" style="color: {{item.accent}}">{{item.percent}}%</text>
+        <text class="module-studied">已学 {{item.studied}}/{{item.total}}</text>
+      </view>
+      <view class="bento-bar">
+        <view class="bento-bar-fill" style="width: {{item.percent}}%; background: {{item.accent}}"></view>
+      </view>
+      <view class="module-foot">
+        <text>固化 {{item.graduated}}</text>
+        <text>待复习 {{item.due}}</text>
+      </view>
+    </view>
+
+    <view class="bento-next">
+      <view class="next-copy">
+        <view class="stat-label">学习节奏</view>
+        <view class="next-title">每天一点点，四块都顾到</view>
+      </view>
+      <view class="next-actions">
+        <view class="next-pill" data-tab="quiz" bindtap="onQuickTab">自测</view>
+        <view class="next-pill" data-tab="verb" bindtap="onQuickTab">变位</view>
+        <view class="next-pill" data-tab="points" bindtap="onQuickTab">知识点</view>
+      </view>
+    </view>
+  </view>
+
+</view>

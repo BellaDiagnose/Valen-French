@@ -12,17 +12,17 @@
  */
 
 const units = [
-  { key: 't1',  label: '主题1 化学的魅力', book: '八年级' },
-  { key: 't2',  label: '主题2 常见物质·上', book: '八年级' },
-  { key: 't3',  label: '主题3 组成与结构', book: '八年级' },
-  { key: 't4',  label: '主题4 化学变化·上', book: '八年级' },
+  { key: 't1',  label: '主题一 化学的魅力', book: '八年级' },
+  { key: 't2',  label: '主题二 常见的物质（上）', book: '八年级' },
+  { key: 't3',  label: '主题三 物质的组成与结构', book: '八年级' },
+  { key: 't4',  label: '主题四 物质的化学变化（上）', book: '八年级' },
   { key: 'lc',  label: 'LC 衔接专题', book: '衔接' }
 ];
 
 const points = [
   // ---------- 主题1 化学的魅力 ----------
   {
-    id: 'c01', unit: 't1', book: '八年级', chapter: '主题1 · 化学使生活更美好',
+    id: 'c01', unit: 't1', book: '八年级', chapter: '专题1 课题1 开启化学之门',
     cn: '化学研究的对象',
     en: 'What is chemistry?',
     defCn: '化学是在分子、原子层次上研究物质的组成、结构、性质及变化规律的科学。它既研究自然界已有的物质，也创造新物质。',
@@ -38,7 +38,7 @@ const points = [
     lcTip: 'LC 开篇题常问 "define chemistry"——必须写 "study of matter: composition, structure, properties and reactions"，只写 "study of chemicals" 不给分。'
   },
   {
-    id: 'c02', unit: 't1', book: '八年级', chapter: '主题1 · 物理变化与化学变化',
+    id: 'c02', unit: 't1', book: '八年级', chapter: '专题1 课题1 开启化学之门',
     cn: '物理变化与化学变化',
     en: 'Physical and chemical changes',
     defCn: '物理变化没有新物质生成，如冰融化、玻璃破碎；化学变化有新物质生成，如铁生锈、蜡烛燃烧，常伴随发光、放热、变色、生成气体或沉淀等现象。',
@@ -55,7 +55,7 @@ const points = [
     lcTip: 'LC 高频题 "give three pieces of evidence that a chemical reaction has occurred"——写 gas given off / colour change / precipitate formed / temperature change，任写三个，动词用 given off、formed 更地道。'
   },
   {
-    id: 'c03', unit: 't1', book: '八年级', chapter: '主题1 · 化学实验探究',
+    id: 'c03', unit: 't1', book: '八年级', chapter: '专题2 课题1 走进化学实验室',
     cn: '实验基本操作与安全',
     en: 'Laboratory techniques and safety',
     defCn: '取用固体用药匙或镊子，液体倾倒时标签朝向手心；加热用外焰，试管口不对人；稀释浓硫酸须把酸沿器壁慢慢注入水中并搅拌。实验前先检查装置气密性。',
@@ -71,7 +71,7 @@ const points = [
     lcTip: 'LC Investigating in Chemistry 常考 safety：写 hazard → risk → precaution（例如 "acid is corrosive; it can burn skin; wear goggles and gloves"），三步缺一扣分。'
   },
   {
-    id: 'c04', unit: 't1', book: '八年级', chapter: '主题1 · 科学探究',
+    id: 'c04', unit: 't1', book: '八年级', chapter: '专题2 课题2 学习开展化学实验探究',
     cn: '科学探究的步骤',
     en: 'Steps of a scientific investigation',
     defCn: '科学探究通常包括提出问题、猜想与假设、制定计划、进行实验收集证据、解释与结论、反思与评价、表达与交流。控制变量法是设计对照实验的核心方法。',
@@ -89,7 +89,7 @@ const points = [
   },
   // ---------- 主题2 常见的物质（上） ----------
   {
-    id: 'c05', unit: 't2', book: '八年级', chapter: '主题2 · 空气',
+    id: 'c05', unit: 't2', book: '八年级', chapter: '专题3 课题1 空气的成分',
     cn: '空气的成分',
     en: 'Composition of air',
     defCn: '空气是混合物，按体积分数约含氮气 78%、氧气 21%、稀有气体 0.94%、二氧化碳 0.03%–0.04%，其余为水蒸气和杂质。',
@@ -105,7 +105,7 @@ const points = [
     lcTip: 'LC 常考测定空气中氧气含量实验（铜粉/红磷）：写 "oxygen is used up, water rises to 1/5 of the container" 并解释 remaining gas is mainly nitrogen。'
   },
   {
-    id: 'c06', unit: 't2', book: '八年级', chapter: '主题2 · 氧气',
+    id: 'c06', unit: 't2', book: '八年级', chapter: '专题3 课题2 氧气和二氧化碳的性质',
     cn: '氧气的性质',
     en: 'Properties of oxygen',
     defCn: '氧气是无色无味、不易溶于水的气体，密度比空气略大。它是化学性质活泼的氧化剂，支持燃烧和呼吸，能使带火星的木条复燃。',
@@ -120,7 +120,7 @@ const points = [
     lcTip: 'LC 必背氧气检验："a glowing splint is relit"。注意 distinguish oxygen 与 air：air 也支持燃烧但木条不复燃。'
   },
   {
-    id: 'c07', unit: 't2', book: '八年级', chapter: '主题2 · 氧气',
+    id: 'c07', unit: 't2', book: '八年级', chapter: '专题3 课题3 氧气和二氧化碳的制备',
     cn: '氧气的实验室制法',
     en: 'Laboratory preparation of oxygen',
     defCn: '实验室常用加热高锰酸钾或氯酸钾与二氧化锰混合物、或过氧化氢在二氧化锰催化下分解制氧气。因氧气不易溶于水，可用排水法收集。',
@@ -136,7 +136,7 @@ const points = [
     lcTip: 'LC 实验题要会写：why use a catalyst（lowers activation energy, unchanged at end）、why collect over water（insoluble）。装置气密性检查必写。'
   },
   {
-    id: 'c08', unit: 't2', book: '八年级', chapter: '主题2 · 二氧化碳',
+    id: 'c08', unit: 't2', book: '八年级', chapter: '专题3 课题2 氧气和二氧化碳的性质',
     cn: '二氧化碳的性质',
     en: 'Properties of carbon dioxide',
     defCn: '二氧化碳是无色无味气体，密度比空气大，能溶于水并与水反应生成碳酸。它不支持燃烧、不能供给呼吸，能使澄清石灰水变浑浊。固态二氧化碳叫干冰。',
@@ -152,7 +152,7 @@ const points = [
     lcTip: 'LC 必背检验："turns limewater milky / a white precipitate of calcium carbonate forms"。写化学方程式时状态符号 (aq)/(s) 要标。'
   },
   {
-    id: 'c09', unit: 't2', book: '八年级', chapter: '主题2 · 二氧化碳',
+    id: 'c09', unit: 't2', book: '八年级', chapter: '专题3 课题3 氧气和二氧化碳的制备',
     cn: '二氧化碳的实验室制法',
     en: 'Laboratory preparation of carbon dioxide',
     defCn: '实验室用大理石（或石灰石）与稀盐酸在常温下反应制取二氧化碳，用向上排空气法收集，因为二氧化碳密度比空气大且能溶于水。',
@@ -167,7 +167,7 @@ const points = [
     lcTip: 'LC 解释为何不用硫酸（forms insoluble calcium carbonate coating, reaction stops）和为何不用浓盐酸（gas contaminated with HCl vapour）——这是经典追问。'
   },
   {
-    id: 'c10', unit: 't2', book: '八年级', chapter: '主题2 · 燃烧与灭火',
+    id: 'c10', unit: 't2', book: '八年级', chapter: '专题3 课题2 氧气和二氧化碳的性质',
     cn: '燃烧的条件与灭火原理',
     en: 'Conditions for combustion and fire control',
     defCn: '燃烧需要三个条件：可燃物、与氧气接触、温度达到着火点。灭火只需破坏其中任一条件：清除可燃物、隔绝氧气或降温至着火点以下。',
@@ -183,7 +183,7 @@ const points = [
   },
   // ---------- 主题3 物质的组成与结构 ----------
   {
-    id: 'c11', unit: 't3', book: '八年级', chapter: '主题3 · 水',
+    id: 'c11', unit: 't3', book: '八年级', chapter: '专题4 课题3 水的组成',
     cn: '水的组成与电解',
     en: 'Composition of water and electrolysis',
     defCn: '水由氢、氧两种元素组成，化学式 H₂O。电解水时正极产生氧气、负极产生氢气，体积比约为 1:2，说明一个水分子由两个氢原子和一个氧原子构成。',
@@ -199,7 +199,7 @@ const points = [
     lcTip: 'LC 必背 "oxygen at the anode, hydrogen at the cathode; 1:2 ratio；hydrogen is twice the volume"。检验：hydrogen 用 burning splint（squeaky pop），oxygen 用 glowing splint。'
   },
   {
-    id: 'c12', unit: 't3', book: '八年级', chapter: '主题3 · 净水',
+    id: 'c12', unit: 't3', book: '八年级', chapter: '专题4 课题2 水的自然循环与人工净化',
     cn: '水的净化',
     en: 'Water treatment',
     defCn: '净水方法按净化程度由低到高为静置沉淀、吸附沉淀、过滤、吸附、蒸馏。过滤除去不溶性杂质，蒸馏可得到蒸馏水，净化程度最高。',
@@ -215,7 +215,7 @@ const points = [
     lcTip: 'LC Water 单元常考 water treatment 流程：screening → coagulation → filtration → chlorination。写每步目的，不要只列名词。'
   },
   {
-    id: 'c13', unit: 't3', book: '八年级', chapter: '主题3 · 硬水与软水',
+    id: 'c13', unit: 't3', book: '八年级', chapter: '专题4 课题2 水的自然循环与人工净化',
     cn: '硬水与软水',
     en: 'Hard and soft water',
     defCn: '硬水含较多可溶性钙、镁化合物，软水含较少或不含。硬水加肥皂水泡沫少、浮渣多；煮沸或蒸馏可软化硬水。硬水易形成水垢，影响锅炉安全。',
@@ -230,7 +230,7 @@ const points = [
     lcTip: 'LC 高频："how to distinguish hard and soft water"——add soap solution, shake; soft = plenty of lather, hard = scum。写 test + observation + conclusion 三步。'
   },
   {
-    id: 'c14', unit: 't3', book: '八年级', chapter: '主题3 · 微粒的性质',
+    id: 'c14', unit: 't3', book: '八年级', chapter: '专题5 课题1 构成物质的微观粒子',
     cn: '分子与原子',
     en: 'Molecules and atoms',
     defCn: '分子是保持物质化学性质的最小粒子，原子是化学变化中的最小粒子。化学变化中分子可分、原子不可再分，原子重新组合形成新分子。',
@@ -246,7 +246,7 @@ const points = [
     lcTip: 'LC 必考 "explain what happens to atoms during a chemical reaction"——写 "bonds break and form; atoms are rearranged; no atoms are created or destroyed" 三点。'
   },
   {
-    id: 'c15', unit: 't3', book: '八年级', chapter: '主题3 · 微粒的性质',
+    id: 'c15', unit: 't3', book: '八年级', chapter: '专题5 课题1 构成物质的微观粒子',
     cn: '微粒的基本性质',
     en: 'Properties of particles',
     defCn: '微粒质量和体积都很小，总在不断运动，微粒间有间隔。温度越高运动越快，间隔越大；气体间隔最大，固体最小。这些性质解释扩散、蒸发和热胀冷缩。',
@@ -261,7 +261,7 @@ const points = [
     lcTip: 'LC Behaviour of Matter 用 kinetic theory 解释状态变化：写 particle spacing + arrangement + motion 三列对比 solid/liquid/gas，比纯文字容易拿分。'
   },
   {
-    id: 'c16', unit: 't3', book: '八年级', chapter: '主题3 · 元素符号',
+    id: 'c16', unit: 't1', book: '八年级', chapter: '专题1 课题2 通用的化学语言',
     cn: '元素与元素符号',
     en: 'Elements and chemical symbols',
     defCn: '元素是具有相同核电荷数（质子数）的一类原子的总称。元素符号第一个字母大写、第二个小写，如 H、O、C、Na、Cl。目前已知元素一百多种。',
@@ -276,7 +276,7 @@ const points = [
     lcTip: 'LC 符号书写大小写严格扣分：Co（钴）与 CO（一氧化碳）完全不同。周期表题用 group/period 定位，写全 "Group 1, Period 3"。'
   },
   {
-    id: 'c17', unit: 't3', book: '八年级', chapter: '主题3 · 化学式',
+    id: 'c17', unit: 't1', book: '八年级', chapter: '专题1 课题2 通用的化学语言',
     cn: '化学式',
     en: 'Chemical formulae',
     defCn: '化学式用元素符号和数字表示物质的组成，如 H₂O、CO₂、NaCl。元素符号右下角数字表示一个分子中该原子的个数；化学式前面的系数表示分子个数。',
@@ -291,7 +291,7 @@ const points = [
     lcTip: 'LC 必区分 subscript 与 coefficient：2H₂O 中 2（coefficient）= 2 个水分子，下标 2 = 每个分子 2 个氢原子。计算题数原子个数时两者要相乘。'
   },
   {
-    id: 'c18', unit: 't3', book: '八年级', chapter: '主题3 · 化合价',
+    id: 'c18', unit: 't1', book: '八年级', chapter: '专题1 课题2 通用的化学语言',
     cn: '化合价',
     en: 'Valency and combining capacity',
     defCn: '化合价表示原子在形成化合物时得失电子或共用电子对的数目，有正价和负价。化合物中各元素正负化合价代数和为零，据此可写出化学式。',
@@ -307,7 +307,7 @@ const points = [
   },
   // ---------- 主题4 物质的化学变化（上） ----------
   {
-    id: 'c19', unit: 't4', book: '八年级', chapter: '主题4 · 质量守恒定律',
+    id: 'c19', unit: 't4', book: '八年级', chapter: '专题6 课题1 化学反应中各物质间的定量关系',
     cn: '质量守恒定律',
     en: 'Law of conservation of mass',
     defCn: '参加化学反应的各物质质量总和等于反应后生成的各物质质量总和。实质是反应前后原子的种类、数目和质量都不改变，只是重新组合。',
@@ -322,7 +322,7 @@ const points = [
     lcTip: 'LC 解释题必须落到原子层面："atoms are rearranged, not created or destroyed"。涉及气体参加/生成的实验要指出须在 closed system 中做，否则称量结果偏小或偏大。'
   },
   {
-    id: 'c20', unit: 't4', book: '八年级', chapter: '主题4 · 化学方程式',
+    id: 'c20', unit: 't4', book: '八年级', chapter: '专题6 课题2 化学反应的表示及基本类型',
     cn: '化学方程式',
     en: 'Chemical equations',
     defCn: '化学方程式用化学式表示化学反应，能表明反应物、生成物、反应条件和各物质间的质量关系。书写步骤：写化学式→配平→注明条件与气体/沉淀符号。',
@@ -337,7 +337,7 @@ const points = [
     lcTip: 'LC 配平方程式是必考分：先配 C、H，最后配 O；写状态符号 (s)/(l)/(g)/(aq)。上海新教改"弱化方程式背诵"，但 LC 强调精确——这是两边最大的差异，要重点练。'
   },
   {
-    id: 'c21', unit: 't4', book: '八年级', chapter: '主题4 · 基本反应类型',
+    id: 'c21', unit: 't4', book: '八年级', chapter: '专题6 课题2 化学反应的表示及基本类型',
     cn: '化合反应与分解反应',
     en: 'Combination and decomposition reactions',
     defCn: '化合反应是由两种或两种以上物质生成一种物质的反应（A+B→AB）；分解反应是由一种物质生成两种或两种以上物质的反应（AB→A+B）。',
@@ -351,7 +351,7 @@ const points = [
     lcTip: 'LC 归类题看"反应物个数 + 生成物个数"即可：多变一 = combination，一变多 = decomposition。举例要配平：2Mg + O₂ → 2MgO；2KMnO₄ → K₂MnO₄ + MnO₂ + O₂。'
   },
   {
-    id: 'c22', unit: 't4', book: '八年级', chapter: '主题4 · 基本反应类型',
+    id: 'c22', unit: 't4', book: '八年级', chapter: '专题6 课题2 化学反应的表示及基本类型',
     cn: '置换反应与复分解反应',
     en: 'Displacement and double-decomposition reactions',
     defCn: '置换反应是一种单质与一种化合物反应生成另一种单质和另一种化合物（A+BC→AC+B）；复分解反应是两种化合物相互交换成分生成两种新化合物（AB+CD→AD+CB），常在溶液中进行，生成沉淀、气体或水时发生。',
@@ -366,7 +366,7 @@ const points = [
     lcTip: 'LC 判断置换能否发生用 reactivity series：more reactive metal displaces a less reactive one from its salt solution。写 ionic equation 时删掉 spectator ions 是加分点。'
   },
   {
-    id: 'c23', unit: 't4', book: '八年级', chapter: '主题4 · 氧化与还原',
+    id: 'c23', unit: 't4', book: '八年级', chapter: '专题6 课题2 化学反应的表示及基本类型',
     cn: '氧化反应',
     en: 'Oxidation and reduction',
     defCn: '物质与氧发生的反应叫氧化反应；含氧化合物里的氧被夺去的反应叫还原反应。从电子角度看，氧化是失去电子，还原是得到电子，两者总是同时发生。',
@@ -381,7 +381,7 @@ const points = [
     lcTip: 'LC Redox 用 "OIL RIG"（Oxidation Is Loss, Reduction Is Gain of electrons）记忆。判断题要写清 "X is oxidised because it loses electrons"。'
   },
   {
-    id: 'c24', unit: 't4', book: '八年级', chapter: '主题4 · 定量关系',
+    id: 'c24', unit: 't4', book: '八年级', chapter: '专题6 课题1 化学反应中各物质间的定量关系',
     cn: '相对原子质量与相对分子质量',
     en: 'Relative atomic and molecular mass',
     defCn: '相对原子质量是以碳-12原子质量的 1/12 为标准，其他原子质量与该标准的比值。相对分子质量等于化学式中各原子相对原子质量的总和，没有单位。',
@@ -396,7 +396,7 @@ const points = [
     lcTip: 'LC 计算题务必区分 Ar / Mr / molar mass，后两者数值相同但单位不同（Mr 无单位，molar mass 单位 g/mol）。写计算步骤：先列式子再代入，最后写单位。'
   },
   {
-    id: 'c25', unit: 't4', book: '八年级', chapter: '主题4 · 定量关系',
+    id: 'c25', unit: 't4', book: '八年级', chapter: '专题6 课题1 化学反应中各物质间的定量关系',
     cn: '化合物中元素质量分数',
     en: 'Percentage composition by mass',
     defCn: '化合物中某元素的质量分数 = 该元素的相对原子质量×原子个数 ÷ 化合物的相对分子质量 × 100%。',
@@ -553,6 +553,22 @@ const points = [
       { en: 'IUPAC nomenclature', cn: 'IUPAC 命名' }
     ],
     lcTip: 'LC 命名题按 IUPAC：选最长碳链 → 编号（取代基位次最小）→ 写前缀+词根+后缀。烯烃用 bromine water 褪色检验（addition 反应）。'
+  },
+  {
+    id: 'c35', unit: 't3', book: '八年级', chapter: '专题5 课题3 结构多样的碳单质',
+    cn: '碳单质的多样性',
+    en: 'Allotropes of carbon',
+    defCn: '金刚石、石墨和 C₆₀ 都是由碳元素组成的不同单质，因碳原子排列方式不同而性质差异很大：金刚石硬度极大、不导电；石墨质软、能导电；C₆₀ 由足球状分子构成。',
+    defEn: 'Allotropes are different forms of the same element in the same physical state. Diamond, graphite and C60 are allotropes of carbon: their atoms are arranged differently, so diamond is very hard and does not conduct electricity, while graphite is soft and conducts electricity.',
+    keywords: [
+      { en: 'allotrope', cn: '同素异形体' },
+      { en: 'diamond', cn: '金刚石' },
+      { en: 'graphite', cn: '石墨' },
+      { en: 'giant covalent structure', cn: '巨型共价结构' },
+      { en: 'delocalised electron', cn: '离域电子' },
+      { en: 'fullerene', cn: '富勒烯' }
+    ],
+    lcTip: 'LC 结构题必须把 structure → property → use 串起来：graphite 的 layered structure + delocalised electrons → conducts electricity → electrodes；diamond 的 rigid 3D network → very hard → cutting tools。只写性质不给结构理由会丢分。'
   }
 ];
 

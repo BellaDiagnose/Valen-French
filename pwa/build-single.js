@@ -7,9 +7,9 @@
  *   → pwa/dist/bella-french.html
  *
  * 内联内容：app.css（esbuild minify）· app.js（esbuild minify）·
- *           data/words.json · 图标（base64）· manifest（data URI）。
+ *           data/{words,science}.json · 图标（base64）· manifest（data URI）。
  * 单文件形态没有外部 sw.js，Service Worker 不注册；离线能力来自文件本身，
- * app.js 通过 __BELLA_SINGLE_FILE__ / __BELLA_INLINE_DATA__ 两个构建钩子切换。
+ * app.js 通过 __BELLA_SINGLE_FILE__ / __BELLA_INLINE_DATA__ / __BELLA_INLINE_SCIENCE__ 三个钩子切换。
  */
 
 const fs = require('fs');
@@ -39,6 +39,8 @@ const css = transformSync(read('app.css'), {
 // ---------- 2. 内联数据 ----------
 const words = JSON.stringify(JSON.parse(read('data/words.json')))
   .replace(/<\//g, '<\\/'); // 防止词库内容意外闭合 <script>
+const science = JSON.stringify(JSON.parse(read('data/science.json')))
+  .replace(/<\//g, '<\\/');
 
 const manifest = JSON.parse(read('manifest.webmanifest'));
 delete manifest.start_url;
@@ -65,7 +67,7 @@ const replacements = [
     `<link rel="icon" type="image/png" sizes="192x192" href="${favicon}">`],
   ['<link rel="stylesheet" href="app.css">', `<style>${css}</style>`],
   ['<script src="app.js"></script>',
-    `<script>window.__BELLA_SINGLE_FILE__=true;window.__BELLA_INLINE_DATA__=${words};</script>` +
+    `<script>window.__BELLA_SINGLE_FILE__=true;window.__BELLA_INLINE_DATA__=${words};window.__BELLA_INLINE_SCIENCE__=${science};</script>` +
     `<script>${js}</script>`]
 ];
 
@@ -88,16 +90,17 @@ blocks.forEach((block, i) => {
 
 // ---------- 4. 自检 + 落盘 ----------
 const markup = html.replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi, '');
-const leftovers = ['src="app.js"', 'href="app.css"', 'sw.js', 'data/words.json',
+const leftovers = ['src="app.js"', 'href="app.css"', 'sw.js', 'data/words.json', 'data/science.json',
   'href="icons/', 'href="manifest.webmanifest"'];
 const found = leftovers.filter((s) => markup.includes(s));
 if (found.length) throw new Error(`仍有外部引用：${found.join(', ')}`);
 if (!html.includes('__BELLA_INLINE_DATA__')) throw new Error('词库未注入');
+if (!html.includes('__BELLA_INLINE_SCIENCE__')) throw new Error('科学数据未注入');
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html);
 
 const kb = (n) => (n / 1024).toFixed(0) + 'KB';
 console.log(`✓ ${path.relative(process.cwd(), OUT)} (${kb(Buffer.byteLength(html))})`);
-console.log(`  JS ${kb(Buffer.byteLength(js))} · CSS ${kb(Buffer.byteLength(css))} · 词库 ${kb(Buffer.byteLength(words))} · 图标+manifest ${kb(Buffer.byteLength(manifestUri + appleIcon + favicon))}`);
+console.log(`  JS ${kb(Buffer.byteLength(js))} · CSS ${kb(Buffer.byteLength(css))} · 词库 ${kb(Buffer.byteLength(words))} · 科学 ${kb(Buffer.byteLength(science))} · 图标+manifest ${kb(Buffer.byteLength(manifestUri + appleIcon + favicon))}`);
 console.log('  无外部请求；SW 在单文件模式下不注册');

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
+    @State private var showScience = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -12,6 +13,11 @@ struct RootView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 6)
                     .padding(.bottom, 10)
+
+                scienceEntry
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                    .padding(.trailing, 108)
 
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -27,6 +33,38 @@ struct RootView: View {
                 .environmentObject(store)
                 .interactiveDismissDisabled(true)
         }
+        .sheet(isPresented: $showScience) {
+            ScienceView()
+        }
+    }
+
+    /// 独立科学页入口（避开右上角悬浮球）
+    private var scienceEntry: some View {
+        Button { showScience = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "atom")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("科学速记 · 生物 / 化学")
+                    .font(.system(size: 13, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 2)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundColor(Theme.primary)
+            .padding(.horizontal, 14)
+            .frame(height: 40)
+            .background(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(Theme.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(Theme.line, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder

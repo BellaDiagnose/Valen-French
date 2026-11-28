@@ -1,28 +1,8 @@
-<!--pages/science/science.wxml —— 初二科学：生物 / 化学双语知识点 + 公式-->
+<!--pages/science/science.wxml —— 科学：七+八年级生物 / 八年级化学双语知识点 + 公式-->
 <view class="page">
 
-  <!-- 顶部：学科切换 + 今日进度 -->
-  <view class="header">
-    <view class="brand">
-      <view class="brand-title">BELLA 助手 · 科学</view>
-      <view class="brand-sub">上海新教材 · 爱尔兰 Leaving Certificate 双语</view>
-    </view>
-    <view class="ring-track">
-      <view class="ring-inner">
-        <text class="ring-num">{{studiedToday}}</text>
-        <text class="ring-unit">/ {{plan.dailyNewCount || 10}}</text>
-      </view>
-      <view class="ring-bar" style="width: {{ringPercent}}%"></view>
-    </view>
-  </view>
-
-  <view class="subjects">
-    <view
-      wx:for="{{subjects}}" wx:key="key"
-      class="subject {{subject === item.key ? 'active' : ''}}"
-      data-key="{{item.key}}" bindtap="onSubjectChange"
-    >{{item.label}}</view>
-  </view>
+  <!-- 右上角悬浮球：可拖动，点击翻面；正面当前模块进度，背面模块导航 -->
+  <include src="../common/float-nav.wxml" />
 
   <view class="tabs">
     <view
@@ -34,7 +14,14 @@
 
   <!-- ========== 模块一：知识点卡 ========== -->
   <view wx:if="{{activeTab === 'point'}}" class="panel">
-    <scroll-view class="chip-row" scroll-x enable-flex>
+    <scroll-view wx:if="{{subject === 'bio'}}" class="chip-row grade-row" scroll-x>
+      <view
+        wx:for="{{gradeOptions}}" wx:key="key"
+        class="chip {{gradeFilter === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}" bindtap="onGradeFilter"
+      >{{item.label}}</view>
+    </scroll-view>
+    <scroll-view class="chip-row" scroll-x>
       <view
         wx:for="{{pointUnits}}" wx:key="key"
         class="chip {{unitFilter === item.key ? 'active' : ''}}"
@@ -94,7 +81,7 @@
 
   <!-- ========== 模块二：公式卡 ========== -->
   <view wx:if="{{activeTab === 'formula'}}" class="panel">
-    <scroll-view class="chip-row" scroll-x enable-flex>
+    <scroll-view class="chip-row" scroll-x>
       <view
         wx:for="{{formulaUnits}}" wx:key="key"
         class="chip {{formulaUnitFilter === item.key ? 'active' : ''}}"

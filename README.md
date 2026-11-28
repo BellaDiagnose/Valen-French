@@ -1,14 +1,14 @@
-# BELLA 助手 · 法语复习 + 初二科学
+# BELLA 助手 · 法语复习 + 七/八年级生物 + 八年级化学
 
 给女儿做的复习 App：法语两本教材、双词库、艾宾浩斯间隔重复；**另含初二生物 / 化学双语知识点与公式**（上海新教材 × 爱尔兰 Leaving Certificate）。**同一套学习算法与爱尔兰绿配色，三套实现并行**——微信小程序、iOS 原生（SwiftUI）、可离线安装的 PWA。
 
 | 平台 | 位置 | 技术栈 | 状态 |
 | --- | --- | --- | --- |
-| 微信小程序 | `miniprogram/` | WXML / WXSS / 原生 JS，纯本地存储；含法语 + 初二科学（生物/化学） | 已可用，未真机预览 |
-| iOS 原生 | `ios/` | SwiftUI，iOS 16+，UserDefaults 持久化 | 工程完整，未编译验证 |
-| PWA | `pwa/` | 零依赖原生 JS + Service Worker，localStorage + 离线缓存；另有单文件构建 | 已可安装，离线自测通过 |
+| 微信小程序 | `miniprogram/` | WXML / WXSS / 原生 JS，纯本地存储；法语 + 科学（生物 7/8、化学 8） | 已可用，未真机预览 |
+| iOS 原生 | `ios/` | SwiftUI，iOS 16+，UserDefaults 持久化；法语 + 科学（生物 7/8、化学 8） | 工程完整，未编译验证 |
+| PWA | `pwa/` | 原生 JS + Service Worker，localStorage + 离线缓存；法语 + 科学，另有单文件构建 | 已可安装，离线自测通过 |
 
-> 初二科学模块目前**仅在微信小程序端**（`miniprogram/pages/science/`），从法语页顶部入口进入。iOS / PWA 的法语功能不受影响。
+> 科学模块在**三端均已实现**：生物覆盖七、八年级，化学为八年级；由启动 landing page 的科学卡或法语页入口进入。数据由同一份 `miniprogram/pages/science/*.js` 导出，三端记忆档案互相隔离（键名 `science_*`）。
 
 ## 快速开始
 
@@ -77,25 +77,29 @@ cd pwa && python3 -m http.server 8080
 | 复习计划 | 待复习 / 学习中 / 新词分组，动态每日额度 |
 | 知识点 | En Avant 按单元（125 条 / 21 单元）；简明法语按 A1·A2（30 课） |
 | 每日计划 | 默认 20 词，10–30 动态调节；间隔 ≥ 3 天打开强制 10 题热身 |
-| 进度环 | 右上角可拖动悬浮球，点击翻面切词库；今日进度圆环缓动填充（PWA 为标题右侧固定环） |
+| 进度环 / 导航 | 右上角可拖动悬浮球（法语页 / 科学页共用）：正面当前模块进度环，点击翻面展开为正常尺寸的悬浮面板，列出「首页 + 两本法语书 + 化学 + 生物」，点按即切换模块；四个模块共用同一模板与导航，页内不再放科目切换或页面标题（PWA 为首页三色同心环） |
 | 离线安装 | PWA 可「添加到主屏幕」，Service Worker 预缓存外壳与词库，飞行模式照样背词 |
 
-### 初二科学（仅小程序）
+### 科学：生物 7/8 年级 + 化学 8 年级（三端）
 
-法语页顶部「初二科学 · 生物 / 化学」入口进入，独立页面、独立记忆档案，不与法语词库混记。
+启动 landing page 的四模块卡或模块悬浮导航球进入（iOS 为卡片入口），独立页面、独立记忆档案，不与法语词库混记。生物 / 化学与其他模块同模板：进页即对应科目，切换科目走悬浮导航球，页内不设学科切换块。三端共用 `Science.json` / `science.json`，由 `export_words.js` 从同一份数据导出。
 
 | 模块 | 说明 |
 | --- | --- |
-| 知识点 | 生物 34 条 + 化学 34 条，按沪教版新教材章节筛选；正反面切换中文 / 英文 |
+| 知识点 | 生物 67 条（七年级 30 + 八年级 37，含 LC 衔接）+ 化学 35 条；生物可按「七年级 / 八年级」再按章节筛选，正反面切换中文 / 英文 |
 | 双语内容 | 每条含中文术语、LC 英文术语、中文解释、LC 定义（英文）、关键词表 |
 | LC 答题法 | 每条附 Leaving Certificate 表述提示：定义必踩关键词、过程用 bullet points、图表标注与因果链 |
 | 公式 | 30 条：生物文字表达式 + 遗传图解，化学式 / 必背方程式（带状态符号）/ 计算公式；中英双版本 |
 | 自测 | 四选一，术语互译 / 公式配对 × 英→中 / 中→英；答对推进记忆、答错缩短间隔 |
 | 记忆 | 复用 `study.js` 的 1/2/4/7/15/30/60 天；键名 `science_memory_v1` / `science_plan_v1` / `science_stats_v1` |
 
-**教材与考纲依据**：上海 2027 新教改（化学下放初二，沪教版八年级全一册四主题；生物沪教版 2024 五四学制八上人体保障/调节、八下健康/遗传进化）；爱尔兰 Leaving Certificate 2027 新大纲（Nature of Science + 三条 strand，定义题占 15–20% 分、须覆盖全部关键词）。LC 衔接专题标注了上海初二不单独教但 LC 必考的内容（酶、细胞、光合作用、呼吸作用、渗透、减数分裂、摩尔、滴定、气体定律等），在章名中标「LC」。
+**教材与考纲依据**：上海 2027 新教改（化学下放初二，沪教版八年级全一册四主题；生物沪教版 2024 五四学制七上细胞/植物、七下分类/多样性/生态、八上人体保障/调节、八下健康/遗传进化）；爱尔兰 Leaving Certificate 2027 新大纲（Nature of Science + 三条 strand，定义题占 15–20% 分、须覆盖全部关键词）。
 
-三端差异只在实现方式：进度环小程序用 JS 逐帧缓动、iOS 用 `Circle().trim` + `.animation`、PWA 用 SVG `stroke-dashoffset` + CSS transition；发音小程序侧已整体移除（等 MP3 重新生成），iOS 用系统离线 TTS（`AVSpeechSynthesizer` fr-FR），PWA 用 Web Speech（`speechSynthesis` fr-FR），都不占包体。PWA 少「悬浮球」这一层，进度环直接放在标题右侧。
+**目录级校对已完成**（2026-11-28）：化学按沪科技版《八年级化学全一册》电子课本目录（含页码，4 主题 / 6 专题 / 各课题）校正了 `chapter`，元素符号 / 化学式 / 化合价归回「专题1 课题2 通用的化学语言」，补入遗漏的「专题5 课题3 结构多样的碳单质」；生物按沪教版五四学制 2024 七上（序章 + 1–5 章）/ 七下（6–11 章）/ 八上 / 八下目录校正到节，补入七年级 30 条（b38–b67），并保留八上/八下补入的「感觉器官」「性激素与青春期」「非传染病」三条。酸碱盐相关方程式（f21/f23/f24）已标注为教材外 LC 衔接预习。教材全文需付费，尚未逐页校对。
+
+LC 衔接专题标注了上海八年级不单独教但 LC 必考的内容（酶、渗透、减数分裂、摩尔、滴定、气体定律等），在章名中标「LC」；细胞、光合作用、呼吸作用等已在七年级上册教材中系统出现。
+
+三端差异只在实现方式：进度环小程序用 JS 逐帧缓动 / 首页用 conic-gradient 三色同心环、iOS 用 `Circle().trim` + `.animation`、PWA 用 SVG `stroke-dasharray` + CSS transition；发音小程序侧已整体移除（等 MP3 重新生成），iOS 用系统离线 TTS（`AVSpeechSynthesizer` fr-FR），PWA 用 Web Speech（`speechSynthesis` fr-FR），都不占包体。小程序悬浮球是模块导航（首页 + 四模块），iOS 悬浮球仍只翻面切词库，PWA 用 tab 与首页卡切换模块。
 
 ## 配色（三端统一）
 
@@ -147,8 +151,10 @@ Valen-French/
 │   ├── project.config.json          独立打开本目录时用的工程配置
 │   ├── audio/                       旧 MP3（已无引用，待重新生成后接回）
 │   ├── sitemap.json
+│   ├── pages/common/
+│   │   └── float-nav.js/wxml/wxss   法语页 / 科学页共用的模块导航悬浮球
 │   ├── pages/french/
-│   │   ├── french.js/wxml/wxss/json 页面与交互（五 tab、悬浮球、圆环、科学入口）
+│   │   ├── french.js/wxml/wxss/json 页面与交互（五 tab、模块导航球、圆环）
 │   │   ├── study.js                 记忆曲线与学习计划（法语 + 科学共用）
 │   │   ├── conjugation.js           现在时变位生成器
 │   │   ├── data.js                  简明法语词库 / 动词 / 语法
@@ -156,12 +162,12 @@ Valen-French/
 │   └── pages/science/
 │       ├── science.js/wxml/wxss/json 科学页（三 tab：知识点 / 公式 / 自测）
 │       ├── data-bio.js              生物 34 条（沪教版 2024 五四学制）
-│       ├── data-chem.js             化学 34 条（沪教版八年级新教材）
+│       ├── data-chem.js             化学 35 条（沪教版八年级新教材）
 │       └── data-formula.js          公式 30 条（表达式 / 方程式 / 计算式）
 ├── ios/                             iOS 原生（详见 ios/README.md）
 │   ├── ValenFrench.xcodeproj/
 │   ├── ValenFrench/{App,Models,Views,Design,Services,Resources}
-│   ├── Tools/export_words.js        从小程序数据导出 Words.json（iOS + PWA 双写）
+│   ├── Tools/export_words.js        从小程序数据导出 Words.json + Science.json（iOS + PWA 双写）
 │   └── Tools/make_appicon.py        生成 AppIcon 1024 与 PWA 全套图标
 ├── .github/workflows/ios-ipa.yml    云端 macOS 构建 unsigned ipa
 ├── pwa/                             可离线安装的 PWA（标准版零依赖、无构建）
@@ -210,9 +216,10 @@ node ios/Tools/export_words.js
 - [x] 三端主色统一为爱尔兰绿（`#0f8a5a` / `#22ac70` / `#053a28`），语义色（橙/红）保留。
 - [x] PWA 已实现并离线自测：Node DOM 桩跑通五个 tab、记忆推进、强制自测；伪 `CacheStorage` + 断网验证预缓存、导航回退、词库离线读取与版本清理。
 - [x] PWA 单文件版：esbuild 压缩 + 全资源内联，断网模拟下跑真实产物脚本，验证零 fetch / 零 SW / 五 tab 与记忆推进正常；标准 PWA 三套旧测试回归通过。
-- [x] 初二科学模块（小程序）：98 条数据（生物 34 / 化学 34 / 公式 30）、486 个 LC 关键词；Node 桩跑真实页面，验证翻卡、中英切换、章节筛选、学科切换、记忆推进、公式卡、四选一自测与持久化。修复了 `Number('u23') → NaN` 导致章节筛选失效的 bug。
-- [ ] 初二科学内容依据公开教材目录与考纲整理，**未经教材逐页校对**；LC 衔接专题按新大纲（2027 首考）编写，表述细节建议对照 Curriculum Online 官方 specification 复核。
-- [ ] 初二科学仅小程序端；若需要 iOS / PWA 同款，可复用三个 data 文件移植。
+- [x] 科学三端同步：132 条数据（生物 67 / 化学 35 / 公式 30）、707 个 LC 关键词；同一份导出脚本写入 iOS `Science.json` 与 PWA `science.json`。Node 桩跑真实代码，验证三端翻卡、中英切换、七/八年级筛选、章节筛选、学科切换、记忆推进、公式卡与四选一自测。`export_words.js` 从小程序三个 data 文件导出，无需手改。
+- [x] 教材目录级校对：化学按沪科技版八年级全一册目录（含页码）校正章节归属、补碳单质；生物按沪教版五四学制 2024 七上/七下/八上/八下目录校正到节，补七年级 30 条与八年级三条遗漏；酸碱盐方程式标注为教材外。
+- [ ] 教材全文需付费，**尚未逐页校对**；LC 衔接专题按 2027 首考新大纲编写，表述细节建议对照 Curriculum Online 官方 specification 复核。
+- [ ] iOS 科学模块未在真机编译验证（本机无 Xcode），已通过 `swiftc -parse` 与工程文件引用检查；注意 `ScienceView.swift` 的类型检查只能在云端构建时完成。
 - [ ] PWA 未真机安装验证：Safari「添加到主屏幕」后的全屏与安全区表现、法国语音色是否已下载（未装法语语音包时 `speechSynthesis` 会静默失败）。
 - [ ] PWA 需 HTTPS 上线：可挂到现有 Caddy 反代（如 `bella.valen-robotic.cn`）指向 `pwa/`，`localhost` 与 `127.0.0.1` 除外。
 - [ ] 小程序尚未真机预览验证。

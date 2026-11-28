@@ -1,5 +1,6 @@
 {
   "pages": [
+    "pages/home/home",
     "pages/french/french",
     "pages/science/science"
   ],

@@ -27,6 +27,7 @@ open ios/ValenFrench.xcodeproj
 | 知识点 | En Avant 按单元 / 简明法语按 A1·A2 | 同款 |
 | 进度环 | 右上角悬浮球，可拖动、翻转切词库 | 同款，改用 `Circle().trim` 原生动画填充 |
 | 强制自测 | 间隔 ≥ 3 天，10 题热身 | 同款，sheet 弹层锁定 tab |
+| 科学（生物 7/8、化学 8） | 独立科学页（知识点 / 公式 / 自测） | `ScienceView` sheet 呈现，生物可按七/八年级 + 章节筛选，双语翻卡与 LC 关键词 |
 | 发音 | 已移除（曾用 MP3） | **系统离线 TTS**（`AVSpeechSynthesizer` fr-FR），无需音频文件 |
 
 ## 目录结构
@@ -39,22 +40,24 @@ ios/
 │   ├── Models/         Models（Word/MemoryRecord/StudyPlan/Verb…）
 │   │                   StudyEngine（study.js 的 Swift 移植）
 │   │                   WordBank（Words.json 解码与聚合）
+│   │                   ScienceBank / ScienceStore（Science.json 解码与科学页状态）
 │   ├── Services/       SpeechService（fr-FR TTS）
 │   ├── Design/         Theme（色板、卡片、按钮、Toast）
-│   ├── Views/          Card / Quiz / Verb / Plan / Points / FloatingRing / ForceQuiz
-│   ├── Resources/      Words.json（357KB，全部词库与知识点）
+│   ├── Views/          Card / Quiz / Verb / Plan / Points / Science / FloatingRing / ForceQuiz
+│   ├── Resources/      Words.json（357KB）+ Science.json（102KB，生物/化学/公式）
 │   ├── Assets.xcassets AppIcon（1024，由 Tools/make_appicon.py 生成）
 │   └── Info.plist      CFBundleDisplayName = BELLA 助手
 ├── Design/             设计稿导出（appicon-preview.png）
-├── Tools/export_words.js                   从小程序数据生成 Words.json（同时写入 pwa/data/）
+├── Tools/export_words.js                   导出 Words.json + Science.json（同时写入 pwa/data/）
 └── Tools/make_appicon.py                   生成 AppIcon 与 PWA 图标（爱尔兰三叶草 + BELLA 字标）
 ```
 
 ## 数据流
 
-`miniprogram/pages/french/*.js` →（`node ios/Tools/export_words.js`）→ `ValenFrench/Resources/Words.json` + `pwa/data/words.json` → `WordBank` 解码 → `AppStore`。
+`miniprogram/pages/french/*.js` →（`node ios/Tools/export_words.js`）→ `Words.json` + `pwa/data/words.json` → `WordBank` → `AppStore`；
+`miniprogram/pages/science/*.js` → 同一脚本 → `Science.json` + `pwa/data/science.json` → `ScienceBank` → `ScienceStore` → `ScienceView`。
 
-改了词库、例句或变位后，只需重跑导出脚本，iOS 端不用改代码：
+改了词库、例句、变位或科学知识点后，只需重跑导出脚本，iOS 端不用改代码：
 
 ```bash
 node ios/Tools/export_words.js

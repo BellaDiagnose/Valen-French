@@ -1,52 +1,8 @@
 <!--pages/french/french.wxml-->
 <view class="page">
 
-  <!-- 右上角悬浮球：可拖动，点击翻转；正面进度环，背面词库选择 -->
-  <view
-    class="float-ball"
-    style="left: {{floatX}}px; top: {{floatY}}px;"
-    bindtouchstart="onFloatTouchStart"
-    bindtouchmove="onFloatTouchMove"
-    bindtouchend="onFloatTouchEnd"
-  >
-    <view class="float-inner {{floatFlipped ? 'is-flipped' : ''}}">
-      <!-- 正面：今日进度 -->
-      <view class="float-face float-front">
-        <view
-          class="ring-track"
-          style="background: conic-gradient(#0f8a5a 0%, #22ac70 {{ringPercent}}%, #e8f1ec {{ringPercent}}%, #e8f1ec 100%)"
-        >
-          <view class="ring-inner">
-            <text class="ring-num">{{streak}}</text>
-            <text class="ring-unit">天</text>
-          </view>
-        </view>
-      </view>
-      <!-- 背面：词库选择 -->
-      <view class="float-face float-back">
-        <view class="float-back-title">切换词库</view>
-        <view
-          wx:for="{{sources}}" wx:key="key"
-          class="float-source {{source === item.key ? 'active' : ''}}"
-          data-source="{{item.key}}" catchtap="onSourceChange"
-        >
-          <text>{{item.label}}</text>
-          <text wx:if="{{source === item.key}}" class="float-source-check">✓</text>
-        </view>
-        <view class="float-back-hint">点击球体翻回</view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 科学入口：初二生物 / 化学双语知识点（避开右上角悬浮球） -->
-  <view class="science-entry" bindtap="goScience">
-    <view class="science-entry-icon">🧪</view>
-    <view class="science-entry-text">
-      <view class="science-entry-title">初二科学 · 生物 / 化学</view>
-      <view class="science-entry-sub">上海新教材 × 爱尔兰 Leaving Certificate 双语知识点与公式</view>
-    </view>
-    <view class="science-entry-arrow">→</view>
-  </view>
+  <!-- 右上角悬浮球：可拖动，点击翻面；正面当前模块进度，背面模块导航 -->
+  <include src="../common/float-nav.wxml" />
 
   <!-- Tab 切换（5个） -->
   <view class="tabs">

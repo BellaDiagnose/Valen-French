@@ -5,9 +5,9 @@
 | 形态 | 产物 | 离线来源 | 能否添加到主屏 |
 | --- | --- | --- | --- |
 | 标准 PWA（零依赖、零构建） | `pwa/` 静态目录 | Service Worker 预缓存 | ✅ 需 HTTPS / localhost |
-| 单文件版（esbuild 压缩打包） | `dist/bella-french.html`（约 491KB） | 全部资源已内联，文件本身就是离线包 | ❌ 直接打开时无 SW |
+| 单文件版（esbuild 压缩打包） | `dist/bella-french.html`（约 606KB） | 全部资源已内联，文件本身就是离线包 | ❌ 直接打开时无 SW |
 
-与 `miniprogram/`、`ios/` 同源：词库来自 `data/words.json`（由 `ios/Tools/export_words.js` 导出），记忆算法与持久化键名完全一致。
+与 `miniprogram/`、`ios/` 同源：词库来自 `data/words.json`，科学来自 `data/science.json`（均由 `ios/Tools/export_words.js` 导出）；记忆算法与持久化键名完全一致。第六个 tab「科学」含生物（七/八年级，可按年级 + 章节筛选）/ 化学知识点、公式与自测，走独立的 `science_memory_v1`。
 
 ## 单文件版：一个 HTML 拷走就用
 
@@ -17,9 +17,9 @@ npm install                 # 仅首次需要，只为装 esbuild
 npm run build:single        # → dist/bella-french.html
 ```
 
-构建脚本做四件事：esbuild 压缩 `app.js` / `app.css`；`words.json` 紧凑内嵌；图标与 manifest 转 data URI；折叠 HTML 空白。产物自检会拒绝任何残留的外部引用。
+构建脚本做四件事：esbuild 压缩 `app.js` / `app.css`；`words.json` 与 `science.json` 紧凑内嵌；图标与 manifest 转 data URI；折叠 HTML 空白。产物自检会拒绝任何残留的外部引用。
 
-把 `dist/bella-french.html` 用 AirDrop / 文件 App / 邮件发到设备，直接打开即可背词——**不需要服务器、不需要联网、不需要安装**。页面里的 `__BELLA_SINGLE_FILE__` 构建标志会跳过 `fetch('data/words.json')` 与 `serviceWorker.register()`；状态仍写 `localStorage`，键名与另外两端一致。
+把 `dist/bella-french.html` 用 AirDrop / 文件 App / 邮件发到设备，直接打开即可背词——**不需要服务器、不需要联网、不需要安装**。页面里的 `__BELLA_SINGLE_FILE__` 构建标志会跳过两次 `fetch` 与 `serviceWorker.register()`；状态仍写 `localStorage`，键名与另外两端一致。
 
 取舍：
 
@@ -59,7 +59,7 @@ Service Worker 只在 **HTTPS 或 localhost** 下注册，所以本地必须用 
 | 层 | 策略 | 说明 |
 | --- | --- | --- |
 | App Shell（html/css/js/manifest/图标） | 预缓存 + cache-first | 冷启动 0 网络请求 |
-| `data/words.json` | 独立 `bella-data-<版本>` + cache-first | 只读数据，随版本整体替换 |
+| `data/words.json` / `data/science.json` | 独立 `bella-data-<版本>` + cache-first | 只读数据，随版本整体替换 |
 | 其它静态资源 | stale-while-revalidate | 先回缓存，后台更新 |
 | 导航请求 | 优先返回缓存 shell | 断网也能启动，缺失才回网络 |
 
@@ -69,7 +69,7 @@ Service Worker 只在 **HTTPS 或 localhost** 下注册，所以本地必须用 
 
 改动任何前端文件后：
 
-1. 改 `sw.js` 顶部的 `VERSION`（如 `v1.0.1`），否则老缓存不会失效；
+1. 改 `sw.js` 顶部的 `VERSION`（当前 `v1.1.0`），否则老缓存不会失效；
 2. 若改了词库/例句/变位：`node ios/Tools/export_words.js`；
 3. 若改了图标：`python3 ios/Tools/make_appicon.py`；
 4. 重新部署 → 老用户会在页面底部看到「发现新版本 · 点此更新」，点一下才刷新（不会打断正在背的词）；
@@ -79,12 +79,13 @@ Service Worker 只在 **HTTPS 或 localhost** 下注册，所以本地必须用 
 
 ```
 pwa/
-├── index.html            外壳（顶部品牌 + 进度环 + 五个 tab + 强制自测弹层）
+├── index.html            外壳（顶部品牌 + 进度环 + 六个 tab + 强制自测弹层）
 ├── app.css               绿色主题令牌、卡片、翻面动画、各 tab 样式
-├── app.js                Engine（记忆曲线）+ Bank（词库）+ 五 tab 渲染 + localStorage
+├── app.js                Engine（记忆曲线）+ Bank / Science（词库）+ 六 tab + localStorage
 ├── sw.js                 预缓存 / 分层策略 / 版本升级 / 离线回退
 ├── manifest.webmanifest  安装信息（standalone、主题色、三种图标）
 ├── data/words.json       613 + 1141 词与知识点（导脚本产出，勿手改）
+├── data/science.json     生物 67（七 30 + 八 37）+ 化学 35 + 公式 30 条（导脚本产出，勿手改）
 ├── icons/                192 / 512 / maskable 512 / apple-touch 180
 ├── build-single.js       esbuild 压缩 + 全资源内联 → dist/bella-french.html
 ├── package.json          唯一开发依赖：esbuild（运行 PWA 本身不需要）

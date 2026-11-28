@@ -1,10 +1,11 @@
-// pages/science/science.js —— 初二科学（生物 / 化学）双语知识点 + 公式背诵
+// pages/science/science.js —— 科学（七+八年级生物 / 八年级化学）双语知识点 + 公式背诵
 //
 // 数据源：data-bio.js / data-chem.js / data-formula.js
 // 记忆算法复用 pages/french/study.js（1/2/4/7/15/30/60 天）
 // 存储键与法语端隔离：science_memory_v1 / science_plan_v1 / science_stats_v1
 
 const S = require('../french/study.js');
+const FLOAT_NAV = require('../common/float-nav.js');
 const B = require('./data-bio.js');
 const C = require('./data-chem.js');
 const F = require('./data-formula.js');
@@ -13,24 +14,15 @@ const MEMORY_KEY = 'science_memory_v1';
 const PLAN_KEY = 'science_plan_v1';
 const STATS_KEY = 'science_stats_v1';
 
-// 各类目对应的完整词条（带 gid，记忆档案按 gid 隔离）
-function withGid(list, prefix) {
-  return list.map((p) => Object.assign({}, p, { gid: prefix + p.id }));
+// 各类目对应的完整词条。data-bio / data-chem 的 id 已带 b/c 前缀，
+// gid 直接等于 id（b01 / c01），与首页、PWA、iOS 的记忆键完全一致。
+function withGid(list) {
+  return list.map((p) => Object.assign({}, p, { gid: p.id }));
 }
 
 const BANK = {
-  bio: {
-    name: '生物',
-    units: B.units,
-    points: withGid(B.points, 'b'),
-    prefix: 'b'
-  },
-  chem: {
-    name: '化学',
-    units: C.units,
-    points: withGid(C.points, 'c'),
-    prefix: 'c'
-  }
+  bio: { name: '生物', units: B.units, points: withGid(B.points), prefix: 'b' },
+  chem: { name: '化学', units: C.units, points: withGid(C.points), prefix: 'c' }
 };
 
 // 公式按学科分组：生物 = bio + bio-gen，化学 = chem-*
@@ -40,15 +32,36 @@ function formulasOf(subject) {
     : f.unit.indexOf('chem') === 0));
 }
 
-const SUBJECTS = [
-  { key: 'bio', label: '生物' },
-  { key: 'chem', label: '化学' }
+// 年级口径：七上/七下 → 七年级；八上/八下/衔接 → 八年级（LC 衔接归入八年级）
+const GRADE_OPTIONS = [
+  { key: 'all', label: '全部' },
+  { key: '七', label: '七年级' },
+  { key: '八', label: '八年级' }
 ];
 
-Page({
+function gradeBucket(book) {
+  const first = String(book || '').charAt(0);
+  if (first === '七') return '七';
+  if (first === '八' || first === '衔') return '八';
+  return '';
+}
+
+function inGrade(book, grade) {
+  return !grade || grade === 'all' || gradeBucket(book) === grade;
+}
+
+function unitsOfGrade(subject, grade) {
+  return BANK[subject].units.filter((u) => inGrade(u.book, grade));
+}
+
+Page(Object.assign({}, FLOAT_NAV.methods, {
   data: {
-    subjects: SUBJECTS,
     subject: 'bio',
+
+    // —— 悬浮球（模块导航）——
+    floatX: 0, floatY: 0, floatFlipped: false,
+    floatCurrent: 'bio', floatNavItems: [],
+    floatValue: '', floatUnit: '', floatCurrentLabel: '',
     tabs: [
       { key: 'point', label: '知识点' },
       { key: 'formula', label: '公式' },
@@ -57,6 +70,8 @@ Page({
     activeTab: 'point',
 
     // —— 知识点卡 ——
+    gradeOptions: GRADE_OPTIONS,
+    gradeFilter: 'all',     // all / 七 / 八
     pointUnits: [],
     unitFilter: 0,          // 0 = 全部
     pointIds: [],
@@ -104,16 +119,30 @@ Page({
   },
 
   // ==================== 生命周期 ====================
-  onLoad() {
+  onLoad(options) {
+    FLOAT_NAV.initFloatPosition(this);
     const memory = wx.getStorageSync(MEMORY_KEY) || {};
     const plan = wx.getStorageSync(PLAN_KEY) || S.initPlan(Date.now());
     const stats = wx.getStorageSync(STATS_KEY) || { total: 0, right: 0 };
+    const subject = options && options.subject === 'chem' ? 'chem' : 'bio';
     this.setData({
       memory, plan,
       quizTotal: stats.total || 0,
       quizRight: stats.right || 0
     }, () => {
-      this.refreshSubject('bio');
+      this.refreshSubject(subject);
+      this.syncFloatNav();
+    });
+  },
+
+  // ============ 悬浮球：当前模块进度 + 模块导航 ============
+  syncFloatNav() {
+    const subject = this.data.subject;
+    FLOAT_NAV.syncNavData(this, subject);
+    this.setData({
+      floatValue: this.data.studiedToday || 0,
+      floatUnit: '今日',
+      floatCurrentLabel: subject === 'chem' ? '化学' : '生物'
     });
   },
 
@@ -127,13 +156,7 @@ Page({
     this.setData({ memory, plan }, () => this.updateProgress());
   },
 
-  // ==================== 学科 / tab 切换 ====================
-  onSubjectChange(e) {
-    const key = e.currentTarget.dataset.key;
-    if (key === this.data.subject) return;
-    this.refreshSubject(key);
-  },
-
+  // ==================== tab 切换 ====================
   onTabChange(e) {
     const key = e.currentTarget.dataset.key;
     if (key === this.data.activeTab) return;
@@ -155,6 +178,7 @@ Page({
     );
     this.setData({
       subject,
+      gradeFilter: 'all',
       pointUnits,
       unitFilter: 0,
       formulaUnits,
@@ -170,6 +194,7 @@ Page({
       this.showPoint(0);
       this.showFormula(0);
       this.updateProgress();
+      this.syncFloatNav();
     });
   },
 
@@ -234,6 +259,20 @@ Page({
   },
 
   // ==================== 知识点卡 ====================
+  onGradeFilter(e) {
+    const grade = e.currentTarget.dataset.key;
+    const pointUnits = [{ key: 0, label: '全部' }].concat(
+      unitsOfGrade(this.data.subject, grade).map((u) => ({ key: u.key, label: u.label }))
+    );
+    this.setData({
+      gradeFilter: grade,
+      pointUnits,
+      unitFilter: 0,
+      quiz: null,
+      askedIds: []
+    }, () => this.showPoint(0));
+  },
+
   onUnitFilter(e) {
     const key = e.currentTarget.dataset.key;
     this.setData({ unitFilter: key }, () => this.showPoint(0));
@@ -242,7 +281,9 @@ Page({
   visiblePointIds() {
     const bank = BANK[this.data.subject];
     const filter = this.data.unitFilter;
+    const grade = this.data.gradeFilter;
     return bank.points
+      .filter((p) => inGrade(p.book, grade))
       .filter((p) => !filter || p.unit === filter)
       .map((p) => p.gid);
   },
@@ -381,12 +422,14 @@ Page({
         hint: f.expr
       }));
     }
-    return BANK[this.data.subject].points.map((p) => ({
-      gid: p.gid,
-      front: this.data.quizLang === 'en2zh' ? p.en : p.cn,
-      back: this.data.quizLang === 'en2zh' ? p.cn : p.en,
-      hint: p.chapter
-    }));
+    return BANK[this.data.subject].points
+      .filter((p) => inGrade(p.book, this.data.gradeFilter))
+      .map((p) => ({
+        gid: p.gid,
+        front: this.data.quizLang === 'en2zh' ? p.en : p.cn,
+        back: this.data.quizLang === 'en2zh' ? p.cn : p.en,
+        hint: p.chapter
+      }));
   },
 
   buildQuiz() {
@@ -442,4 +485,4 @@ Page({
     this.setData({ quizTotal: 0, quizRight: 0, askedIds: [] }, () => this.buildQuiz());
     wx.showToast({ title: '统计已重置', icon: 'none' });
   }
-});
+}));

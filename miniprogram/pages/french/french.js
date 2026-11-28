@@ -3,6 +3,7 @@ const { wordList, verbList, grammarLessons, TENSE_NAMES } = require('./data.js')
 const { enavantWords, enavantPoints, enavantExamples, enavantUnits } = require('./enavant.js');
 const S = require('./study.js');
 const C = require('./conjugation.js');
+const FLOAT_NAV = require('../common/float-nav.js');
 
 // ============ 本地缓存 key ============
 const MEMORY_KEY = 'french_memory_v2';        // 记忆档案 { gid: {stage,dueAt,lastReview} }
@@ -44,7 +45,7 @@ function buildGrammarGroups() {
   return Object.keys(groups).map(k => groups[k]);
 }
 
-Page({
+Page(Object.assign({}, FLOAT_NAV.methods, {
   data: {
     tabs: [
       { key: 'card', label: '单词卡' },
@@ -62,10 +63,15 @@ Page({
     ],
     source: 'enavant',
     sourceName: 'En Avant',
-    // —— 悬浮球 ——
+    // —— 悬浮球（模块导航）——
     floatX: 0, floatY: 0,
     cardHeight: 420,
     floatFlipped: false,
+    floatCurrent: 'enavant',
+    floatNavItems: [],
+    floatValue: '',
+    floatUnit: '',
+    floatCurrentLabel: '',
 
     // —— 学习计划 ——
     plan: null,
@@ -130,20 +136,24 @@ Page({
     filterUnit: 0, filterLevel: '全部'
   },
 
-  onLoad() {
-    // 悬浮球初始落在右上角（页面加载后按窗口宽度定位）
+  onLoad(options) {
+    // 卡片高度 = 窗口高度 - 非卡片区占用（tab + 课次条 + 底部按钮/提示 + 页面边距，约 470rpx 换算 px）
     try {
       const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
-      // 卡片高度 = 窗口高度 - 非卡片区占用（tab + 课次条 + 底部按钮/提示 + 页面边距，约 470rpx 换算 px）
       const rpx = info.windowWidth / 750;
-      const cardHeight = Math.max(320, Math.round(info.windowHeight - 470 * rpx));
-      // 悬浮球落在右上角，避开课次条与底部按钮
-      this.setData({ floatX: info.windowWidth - 116, floatY: 150, cardHeight });
-    } catch (e) {
-      this.setData({ floatX: 260, floatY: 150 });
-    }
+      this.setData({ cardHeight: Math.max(320, Math.round(info.windowHeight - 470 * rpx)) });
+    } catch (e) { /* 用默认卡片高度 */ }
+    FLOAT_NAV.initFloatPosition(this);
 
-    const source = wx.getStorageSync(SOURCE_KEY) || 'enavant';
+    const querySource = options && (options.source === 'enavant' || options.source === 'simple')
+      ? options.source
+      : '';
+    const source = querySource || wx.getStorageSync(SOURCE_KEY) || 'enavant';
+    if (querySource && querySource !== wx.getStorageSync(SOURCE_KEY)) {
+      wx.setStorageSync(SOURCE_KEY, source);
+    }
+    const validTabs = ['card', 'quiz', 'verb', 'plan', 'points'];
+    const activeTab = options && validTabs.indexOf(options.tab) >= 0 ? options.tab : 'card';
     const memory = wx.getStorageSync(MEMORY_KEY) || {};
     const verbMemory = wx.getStorageSync(VERB_MEMORY_KEY) || {};
     let plan = wx.getStorageSync(PLAN_KEY) || null;
@@ -164,7 +174,7 @@ Page({
     wx.setStorageSync(PLAN_KEY, plan);
 
     this.setData({
-      source, sourceName: LIBS[source].name, memory, verbMemory, plan,
+      activeTab, source, sourceName: LIBS[source].name, memory, verbMemory, plan,
       verbDueCount: this.countDueVerbs(verbMemory),
       dailyNewCount: plan.dailyNewCount,
       queue: plan.queue,
@@ -179,41 +189,19 @@ Page({
       this.buildPoints();
       this.buildQuiz();
       this.initRing(this.ringPercentOf(plan, memory));
+      this.syncFloatNav();
     });
   },
 
-  // ============ 悬浮球：拖动 + 点击翻转 ============
-  onFloatTouchStart(e) {
-    const t = e.touches[0];
-    this._floatDrag = {
-      startX: t.clientX, startY: t.clientY,
-      originX: this.data.floatX, originY: this.data.floatY,
-      moved: false
-    };
-  },
-  onFloatTouchMove(e) {
-    if (!this._floatDrag) return;
-    const t = e.touches[0];
-    const dx = t.clientX - this._floatDrag.startX;
-    const dy = t.clientY - this._floatDrag.startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) this._floatDrag.moved = true;
-    if (!this._floatDrag.moved) return;
-    let x = this._floatDrag.originX + dx;
-    let y = this._floatDrag.originY + dy;
-    // 限制在屏幕内（球约 100×150px）
-    try {
-      const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
-      x = Math.max(4, Math.min(x, info.windowWidth - 104));
-      y = Math.max(4, Math.min(y, info.windowHeight - 160));
-    } catch (e) { /* 保持原值 */ }
-    this.setData({ floatX: x, floatY: y });
-  },
-  onFloatTouchEnd() {
-    // 没有拖动则视为点击 → 翻转（选词库由 catchtap 处理，不触发翻转）
-    if (this._floatDrag && !this._floatDrag.moved) {
-      this.setData({ floatFlipped: !this.data.floatFlipped });
-    }
-    this._floatDrag = null;
+  // ============ 悬浮球：当前模块进度 + 模块导航 ============
+  syncFloatNav() {
+    const source = this.data.source;
+    FLOAT_NAV.syncNavData(this, source);
+    this.setData({
+      floatValue: this.data.streak || 1,
+      floatUnit: '天',
+      floatCurrentLabel: LIBS[source].name
+    });
   },
 
   // ============ 词库切换 ============
@@ -240,6 +228,7 @@ Page({
     }, () => {
       this.rebuildForSource(source);
       this.initRing(0);
+      this.syncFloatNav();
     });
   },
 
@@ -415,6 +404,7 @@ Page({
       this.computeStats(words, memory)
     ), () => {
       this.animateRing(this.ringPercentOf(plan, memory));
+      FLOAT_NAV.syncNavData(this, this.data.source);
     });
 
     if (!silent) {
@@ -437,10 +427,6 @@ Page({
   markForgotten() { this.rateCurrent(-1); },
 
   // ============ Tab ============
-  goScience() {
-    wx.navigateTo({ url: '/pages/science/science' });
-  },
-
   onTabChange(e) {
     const key = e.currentTarget.dataset.key;
     if (key === this.data.activeTab) return;
@@ -715,4 +701,4 @@ Page({
   onFilterLevel(e) {
     this.setData({ filterLevel: e.currentTarget.dataset.level });
   }
-});
+}));
