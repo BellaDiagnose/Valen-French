@@ -44,9 +44,8 @@ enum ModuleNavTarget: String, CaseIterable, Identifiable {
     }
 }
 
-/// 模块导航球：小程序 float-nav 同款白色圆角方块。
-/// 正面 = 当前模块进度环 + 模块名 + 「点击切换模块」；背面 = 四个科目入口（首页由 navbar 承担）。
-/// 可拖到页面任意位置，位置在三个页面之间共享并持久化。
+/// 悬浮导航球：半透明圆形，只有进度环 + 数值，点一下展开四科目入口。
+/// 可拖到页面任意位置；位置在三个页面之间共享并持久化。
 struct FloatingRingView: View {
     var target: ModuleNavTarget = .enavant
     var value: Int = 1
@@ -56,17 +55,18 @@ struct FloatingRingView: View {
 
     /// 球心在容器坐标系中的位置；nil 表示还没拖动过，用默认停靠点
     @State private var center: CGPoint?
-    @State private var dragging: CGSize = .zero
+    /// 本次拖动的起始球心，避免用「移动中的自身坐标」算位移（会抖）
+    @State private var dragStart: CGPoint?
     @State private var flipped = false
 
     /// 跨页面共享拖动结果（"x,y"），离开页面再回来不会被重置
     @AppStorage("nav_ball_center") private var savedCenter: String = ""
 
-    private let ballW: CGFloat = 108
-    private let ballH: CGFloat = 150
+    private let ball: CGFloat = 92
     private let openW: CGFloat = 198
     private let openH: CGFloat = 238
     private let edge: CGFloat = 8
+    private let space = "navBallCanvas"
 
     var body: some View {
         GeometryReader { geo in
@@ -82,109 +82,114 @@ struct FloatingRingView: View {
             }
             .frame(width: size.width, height: size.height, alignment: .top)
             .position(x: at.x + size.width / 2, y: at.y + size.height / 2)
-            .animation(.easeInOut(duration: 0.3), value: flipped)
+            .animation(.easeOut(duration: 0.22), value: flipped)
         }
-        .onAppear {
-            if center == nil, !savedCenter.isEmpty {
-                let parts = savedCenter.split(separator: ",").compactMap { Double($0) }
-                if parts.count == 2 { center = CGPoint(x: parts[0], y: parts[1]) }
-            }
-        }
+        .coordinateSpace(name: space)
+        .onAppear { restoreCenter() }
     }
 
     private var currentSize: CGSize {
-        flipped ? CGSize(width: openW, height: openH) : CGSize(width: ballW, height: ballH)
+        flipped ? CGSize(width: openW, height: openH)
+                : CGSize(width: ball, height: ball)
+    }
+
+    private func restoreCenter() {
+        guard center == nil, !savedCenter.isEmpty else { return }
+        let parts = savedCenter.split(separator: ",").compactMap { Double($0) }
+        if parts.count == 2 { center = CGPoint(x: parts[0], y: parts[1]) }
+    }
+
+    private func dockCenter(in container: CGSize) -> CGPoint {
+        CGPoint(x: container.width - 12 - ball / 2, y: 124 + ball / 2)
     }
 
     /// 左上角坐标：默认右上角停靠，拖动后按球心还原
     private func resolved(container: CGSize, size: CGSize) -> CGPoint {
-        let base: CGPoint
-        if let center {
-            base = CGPoint(x: center.x + dragging.width - size.width / 2,
-                           y: center.y + dragging.height - size.height / 2)
-        } else {
-            base = CGPoint(x: container.width - 10 - size.width,
-                           y: min(120, max(edge, container.height - size.height - edge)))
-        }
-        return clamp(base, container: container, size: size)
+        let c = center ?? dockCenter(in: container)
+        return clampTopLeft(CGPoint(x: c.x - size.width / 2, y: c.y - size.height / 2),
+                            container: container,
+                            size: size)
     }
 
-    /// 保证整个球（含展开态）始终在页面内，可停在任意位置
-    private func clamp(_ point: CGPoint, container: CGSize, size: CGSize) -> CGPoint {
+    /// 保证整个视图（含展开态）始终在页面内，可停在任意位置
+    private func clampTopLeft(_ point: CGPoint, container: CGSize, size: CGSize) -> CGPoint {
         let maxX = max(edge, container.width - size.width - edge)
         let maxY = max(edge, container.height - size.height - edge)
         return CGPoint(x: min(maxX, max(edge, point.x)),
                        y: min(maxY, max(edge, point.y)))
     }
 
-    private func dragGesture(container: CGSize, size: CGSize) -> some Gesture {
-        DragGesture(minimumDistance: 2)
+    private func clampCenter(_ point: CGPoint, container: CGSize, size: CGSize) -> CGPoint {
+        let topLeft = clampTopLeft(CGPoint(x: point.x - size.width / 2,
+                                           y: point.y - size.height / 2),
+                                   container: container, size: size)
+        return CGPoint(x: topLeft.x + size.width / 2, y: topLeft.y + size.height / 2)
+    }
+
+    /// 在固定的容器坐标系里量位移，球体移动不会反过来改坐标系（这是之前颤抖的根因）
+    private func dragGesture(container: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 1, coordinateSpace: .named(space))
             .onChanged { value in
-                dragging = value.translation
+                let size = CGSize(width: ball, height: ball)
+                let start = dragStart ?? center ?? dockCenter(in: container)
+                if dragStart == nil { dragStart = start }
+                let moved = CGPoint(x: start.x + value.translation.width,
+                                    y: start.y + value.translation.height)
+                center = clampCenter(moved, container: container, size: size)
             }
             .onEnded { _ in
-                let landed = resolved(container: container, size: size)
-                let next = CGPoint(x: landed.x + size.width / 2,
-                                   y: landed.y + size.height / 2)
-                center = next
-                dragging = .zero
-                savedCenter = "\(Int(next.x)),\(Int(next.y))"
+                dragStart = nil
+                if let center {
+                    savedCenter = "\(Int(center.x)),\(Int(center.y))"
+                }
             }
     }
 
-    // MARK: 正面
+    // MARK: 正面：半透明圆形
 
     private func front(container: CGSize) -> some View {
-        VStack(spacing: 0) {
-            ZStack {
-                Circle()
-                    .stroke(Theme.track, lineWidth: 9)
-                Circle()
-                    .trim(from: 0, to: min(1, max(0, fraction)))
-                    .stroke(
-                        LinearGradient(colors: [Theme.primary, Theme.primarySoft],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 50, height: 50)
-                    .shadow(color: Theme.ink.opacity(0.05), radius: 4, x: 0, y: 1)
-                VStack(spacing: 0) {
-                    Text("\(value)")
-                        .font(.system(size: 21, weight: .heavy, design: .rounded))
-                        .foregroundColor(Theme.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    Text(unit)
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(Theme.sub)
-                }
+        ZStack {
+            Circle()
+                .fill(.ultraThinMaterial)
+            Circle()
+                .fill(Color.white.opacity(0.42))
+
+            Circle()
+                .stroke(Theme.track.opacity(0.6), lineWidth: 7)
+                .padding(9)
+
+            Circle()
+                .trim(from: 0, to: min(1, max(0, fraction)))
+                .stroke(
+                    LinearGradient(colors: [Theme.primary, Theme.primarySoft],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing),
+                    style: StrokeStyle(lineWidth: 7, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .padding(9)
+
+            VStack(spacing: 0) {
+                Text("\(value)")
+                    .font(.system(size: 20, weight: .heavy, design: .rounded))
+                    .foregroundColor(Theme.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text(unit)
+                    .font(.system(size: 8.5, weight: .semibold))
+                    .foregroundColor(Theme.sub)
             }
-            .frame(width: 68, height: 68)
-
-            Text(target.label)
-                .font(.system(size: 12, weight: .heavy))
-                .foregroundColor(Color(hex: 0x14352A))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .padding(.top, 10)
-
-            Text("点击切换模块")
-                .font(.system(size: 9, weight: .medium))
-                .foregroundColor(Color(hex: 0x8EA196))
-                .padding(.top, 3)
         }
-        .frame(width: ballW, height: ballH)
-        .navBallSurface()
-        .contentShape(Rectangle())
-        .gesture(dragGesture(container: container,
-                             size: CGSize(width: ballW, height: ballH)))
+        .frame(width: ball, height: ball)
+        .overlay(
+            Circle().stroke(Color.white.opacity(0.65), lineWidth: 0.8)
+        )
+        .shadow(color: Color(hex: 0x10261D).opacity(0.14), radius: 9, x: 0, y: 4)
+        .contentShape(Circle())
+        .gesture(dragGesture(container: container))
         .onTapGesture { withAnimation { flipped = true } }
     }
 
-    // MARK: 背面
+    // MARK: 背面：四科目入口
 
     private var back: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -244,21 +249,14 @@ struct FloatingRingView: View {
         }
         .padding(12)
         .frame(width: openW, height: openH, alignment: .top)
-        .navBallSurface()
-    }
-}
-
-private extension View {
-    func navBallSurface() -> some View {
-        self
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.97))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color(hex: 0xE2EFE8), lineWidth: 1)
-            )
-            .shadow(color: Color(hex: 0x10261D).opacity(0.16), radius: 12, x: 0, y: 6)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.96))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color(hex: 0xE2EFE8), lineWidth: 1)
+        )
+        .shadow(color: Color(hex: 0x10261D).opacity(0.16), radius: 12, x: 0, y: 6)
     }
 }
