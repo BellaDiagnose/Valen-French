@@ -1,15 +1,17 @@
 {
   "pages": [
-    "pages/french/french"
+    "pages/french/french",
+    "pages/science/science"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTitleText": "BELLA 助手",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#f4f6fb",
+    "backgroundColor": "#f2f8f4",
     "backgroundTextStyle": "light",
     "enablePullDownRefresh": false
   },
   "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json"
 }

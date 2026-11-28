@@ -1,0 +1,11 @@
+{
+  "name": "bella-french-pwa",
+  "private": true,
+  "description": "BELLA 助手 PWA 与单文件构建",
+  "scripts": {
+    "build:single": "node build-single.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

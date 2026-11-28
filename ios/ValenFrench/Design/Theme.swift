@@ -1,20 +1,21 @@
 import SwiftUI
 
-// MARK: - 色板（与原小程序一致）
+// MARK: - 色板（爱尔兰绿，取自 AppIcon 的 #22AC70 → #053A28 渐变）
 
 enum Theme {
-    static let bg = Color(hex: 0xF4F6FB)
+    static let bg = Color(hex: 0xF2F8F4)          // 薄荷白底
     static let surface = Color.white
-    static let primary = Color(hex: 0x3D5BD9)
-    static let primarySoft = Color(hex: 0x5B7CF0)
-    static let chip = Color(hex: 0xE6EBF7)
-    static let track = Color(hex: 0xEDF0F8)
-    static let ink = Color(hex: 0x1F2740)
-    static let sub = Color(hex: 0x6F7893)
-    static let line = Color(hex: 0xDDE3F1)
+    static let primary = Color(hex: 0x0F8A5A)     // 主色：翡翠绿（白字对比 4.3:1）
+    static let primarySoft = Color(hex: 0x22AC70) // 图标渐变亮端
+    static let primaryDeep = Color(hex: 0x053A28) // 图标渐变暗端
+    static let chip = Color(hex: 0xE4F1E9)        // 薄荷底
+    static let track = Color(hex: 0xE6F0EA)       // 进度槽
+    static let ink = Color(hex: 0x10261D)         // 墨绿黑
+    static let sub = Color(hex: 0x5E7368)         // 鼠尾草灰
+    static let line = Color(hex: 0xD7E7DD)
     static let success = Color(hex: 0x2E9E6B)
     static let warn = Color(hex: 0xD9754F)
-    static let accentSoft = Color(hex: 0xF3F6FF)
+    static let accentSoft = Color(hex: 0xF0F8F3)
 }
 
 extension Color {
@@ -38,7 +39,7 @@ extension View {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .fill(Theme.surface)
             )
-            .shadow(color: Color(hex: 0x1F2740).opacity(0.06), radius: 14, x: 0, y: 6)
+            .shadow(color: Theme.ink.opacity(0.06), radius: 14, x: 0, y: 6)
     }
 
     /// 胶囊标签背景

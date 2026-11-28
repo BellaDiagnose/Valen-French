@@ -1,0 +1,203 @@
+<!--pages/science/science.wxml —— 初二科学：生物 / 化学双语知识点 + 公式-->
+<view class="page">
+
+  <!-- 顶部：学科切换 + 今日进度 -->
+  <view class="header">
+    <view class="brand">
+      <view class="brand-title">BELLA 助手 · 科学</view>
+      <view class="brand-sub">上海新教材 · 爱尔兰 Leaving Certificate 双语</view>
+    </view>
+    <view class="ring-track">
+      <view class="ring-inner">
+        <text class="ring-num">{{studiedToday}}</text>
+        <text class="ring-unit">/ {{plan.dailyNewCount || 10}}</text>
+      </view>
+      <view class="ring-bar" style="width: {{ringPercent}}%"></view>
+    </view>
+  </view>
+
+  <view class="subjects">
+    <view
+      wx:for="{{subjects}}" wx:key="key"
+      class="subject {{subject === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}" bindtap="onSubjectChange"
+    >{{item.label}}</view>
+  </view>
+
+  <view class="tabs">
+    <view
+      wx:for="{{tabs}}" wx:key="key"
+      class="tab {{activeTab === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}" bindtap="onTabChange"
+    >{{item.label}}</view>
+  </view>
+
+  <!-- ========== 模块一：知识点卡 ========== -->
+  <view wx:if="{{activeTab === 'point'}}" class="panel">
+    <scroll-view class="chip-row" scroll-x enable-flex>
+      <view
+        wx:for="{{pointUnits}}" wx:key="key"
+        class="chip {{unitFilter === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}" bindtap="onUnitFilter"
+      >{{item.label}}</view>
+    </scroll-view>
+
+    <view wx:if="{{point}}" class="card-meta">
+      <view class="card-counter">{{pointIndex + 1}} / {{pointIds.length}}</view>
+      <view class="stage-pill">{{pointStageLabel}}</view>
+    </view>
+
+    <view wx:if="{{point}}" class="flashcard {{pointFlipped ? 'is-flipped' : ''}}" bindtap="flipPoint">
+      <view class="face face-front">
+        <view class="card-tag">{{point.chapter}} · {{subject === 'bio' ? '生物' : '化学'}}</view>
+        <view class="term-main {{pointLang === 'en' ? 'term-en' : ''}}">
+          {{pointLang === 'en' ? point.en : point.cn}}
+        </view>
+        <view class="flip-hint">点击卡片查看{{pointLang === 'en' ? '中文' : '英文'}}解释 ↻</view>
+      </view>
+      <view class="face face-back">
+        <view class="back-head">
+          <view class="back-title">{{pointLang === 'en' ? point.cn : point.en}}</view>
+          <view class="lang-btn" catchtap="togglePointLang">{{pointLang === 'en' ? '中 →' : 'EN →'}}</view>
+        </view>
+        <scroll-view class="back-body" scroll-y>
+          <view class="def-block">
+            <view class="def-label">{{pointLang === 'en' ? '中文解释' : 'Leaving Certificate Definition'}}</view>
+            <view class="def-text">{{pointLang === 'en' ? point.defCn : point.defEn}}</view>
+          </view>
+          <view class="kw-block">
+            <view class="def-label">LC 关键词 · Key terms</view>
+            <view class="kw-list">
+              <view wx:for="{{point.keywords}}" wx:key="en" class="kw-item">
+                <text class="kw-en">{{item.en}}</text>
+                <text class="kw-cn">{{item.cn}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="tip-block">
+            <view class="def-label">答题方法 · LC Exam tip</view>
+            <view class="tip-text">{{point.lcTip}}</view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+
+    <view wx:if="{{point}}" class="actions">
+      <view class="btn-nav" bindtap="prevPoint">← 上一个</view>
+      <view class="btn-rate btn-remember" data-delta="1" bindtap="ratePoint">记住了 ✓</view>
+      <view class="btn-rate btn-forget" data-delta="-1" bindtap="ratePoint">忘记了 ↻</view>
+      <view class="btn-nav" bindtap="nextPoint">下一个 →</view>
+    </view>
+    <view wx:if="{{point}}" class="rate-hint">下次复习：{{pointNextDue || '待安排'}} ｜ 已学 {{pointTotal}} 条 · 今日到期 {{pointDue}} 条</view>
+    <view wx:if="{{!point}}" class="empty">该分类下暂无知识点</view>
+  </view>
+
+  <!-- ========== 模块二：公式卡 ========== -->
+  <view wx:if="{{activeTab === 'formula'}}" class="panel">
+    <scroll-view class="chip-row" scroll-x enable-flex>
+      <view
+        wx:for="{{formulaUnits}}" wx:key="key"
+        class="chip {{formulaUnitFilter === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}" bindtap="onFormulaUnitFilter"
+      >{{item.label}}</view>
+    </scroll-view>
+
+    <view wx:if="{{formula}}" class="card-meta">
+      <view class="card-counter">{{formulaIndex + 1}} / {{formulaIds.length}}</view>
+      <view class="stage-pill">{{formulaStageLabel}}</view>
+    </view>
+
+    <view wx:if="{{formula}}" class="flashcard formula-card {{formulaFlipped ? 'is-flipped' : ''}}" bindtap="flipFormula">
+      <view class="face face-front">
+        <view class="card-tag">{{formulaLang === 'en' ? formula.en : formula.cn}} · {{subject === 'bio' ? '生物' : '化学'}}</view>
+        <view class="expr-main">{{formulaLang === 'en' ? formula.exprEn : formula.expr}}</view>
+        <view wx:if="{{formula.formula}}" class="formula-line">{{formula.formula}}</view>
+        <view class="flip-hint">点击卡片查看含义与考点 ↻</view>
+      </view>
+      <view class="face face-back">
+        <view class="back-head">
+          <view class="back-title">{{formulaLang === 'en' ? formula.cn : formula.en}}</view>
+          <view class="lang-btn" catchtap="toggleFormulaLang">{{formulaLang === 'en' ? '中 →' : 'EN →'}}</view>
+        </view>
+        <scroll-view class="back-body" scroll-y>
+          <view class="def-block">
+            <view class="def-label">条件 · Condition</view>
+            <view class="def-text">{{formulaLang === 'en' ? formula.condEn : formula.cond}}</view>
+          </view>
+          <view class="def-block">
+            <view class="def-label">{{formulaLang === 'en' ? '中文说明' : 'LC 考点说明'}}</view>
+            <view class="def-text">{{formulaLang === 'en' ? formula.noteCn : formula.noteEn}}</view>
+          </view>
+          <view class="kw-block">
+            <view class="def-label">LC 关键词 · Key terms</view>
+            <view class="kw-list">
+              <view wx:for="{{formula.keywords}}" wx:key="en" class="kw-item">
+                <text class="kw-en">{{item.en}}</text>
+                <text class="kw-cn">{{item.cn}}</text>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+
+    <view wx:if="{{formula}}" class="actions">
+      <view class="btn-nav" bindtap="prevFormula">← 上一个</view>
+      <view class="btn-rate btn-remember" data-delta="1" bindtap="rateFormula">记住了 ✓</view>
+      <view class="btn-rate btn-forget" data-delta="-1" bindtap="rateFormula">忘记了 ↻</view>
+      <view class="btn-nav" bindtap="nextFormula">下一个 →</view>
+    </view>
+    <view wx:if="{{!formula}}" class="empty">该分类下暂无公式</view>
+  </view>
+
+  <!-- ========== 模块三：自测 ========== -->
+  <view wx:if="{{activeTab === 'quiz'}}" class="panel">
+    <view class="quiz-settings">
+      <view class="setting-row">
+        <text class="setting-label">题目</text>
+        <view class="seg">
+          <view class="seg-item {{quizMode === 'point' ? 'active' : ''}}" data-key="point" bindtap="onQuizModeChange">术语互译</view>
+          <view class="seg-item {{quizMode === 'formula' ? 'active' : ''}}" data-key="formula" bindtap="onQuizModeChange">公式配对</view>
+        </view>
+      </view>
+      <view class="setting-row">
+        <text class="setting-label">方向</text>
+        <view class="seg">
+          <view class="seg-item {{quizLang === 'en2zh' ? 'active' : ''}}" data-key="en2zh" bindtap="onQuizLangChange">英 → 中</view>
+          <view class="seg-item {{quizLang === 'zh2en' ? 'active' : ''}}" data-key="zh2en" bindtap="onQuizLangChange">中 → 英</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="quiz-meta">
+      <view class="quiz-score">正确 {{quizRight}} / {{quizTotal}}</view>
+      <view class="quiz-reset" bindtap="resetQuizStats">重置</view>
+    </view>
+
+    <view wx:if="{{quiz}}" class="quiz-question">
+      <view class="quiz-mode-tag">{{subject === 'bio' ? '生物' : '化学'}} · {{quizMode === 'point' ? '术语' : '公式'}}</view>
+      <view class="quiz-word">{{quiz.answer.front}}</view>
+      <view class="quiz-hint" wx:if="{{quiz.answer.hint}}">{{quiz.answer.hint}}</view>
+      <view class="quiz-qhint">选出正确的{{quizLang === 'en2zh' ? '中文' : '英文'}}</view>
+    </view>
+
+    <view wx:if="{{quiz}}" class="options">
+      <view
+        wx:for="{{quiz.options}}" wx:key="id"
+        class="option
+          {{quizAnswered && item.id === quiz.answerId ? 'opt-correct' : ''}}
+          {{quizAnswered && item.id === quizSelectedId && item.id !== quiz.answerId ? 'opt-wrong' : ''}}"
+        data-id="{{item.id}}" bindtap="onSelectOption"
+      >
+        <text class="option-text">{{item.text}}</text>
+        <text wx:if="{{quizAnswered && item.id === quiz.answerId}}" class="option-mark">✓</text>
+      </view>
+    </view>
+
+    <view wx:if="{{quizAnswered}}" class="quiz-feedback {{quizCorrect ? 'fb-right' : 'fb-wrong'}}">
+      {{quizCorrect ? '答对了 ✓' : '正确答案：' + quiz.answer.back}}
+    </view>
+    <view wx:if="{{quizAnswered}}" class="btn-primary quiz-next" bindtap="nextQuiz">下一题 →</view>
+  </view>
+
+</view>

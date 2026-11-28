@@ -437,6 +437,10 @@ Page({
   markForgotten() { this.rateCurrent(-1); },
 
   // ============ Tab ============
+  goScience() {
+    wx.navigateTo({ url: '/pages/science/science' });
+  },
+
   onTabChange(e) {
     const key = e.currentTarget.dataset.key;
     if (key === this.data.activeTab) return;

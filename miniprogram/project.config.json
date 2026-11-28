@@ -1,7 +1,12 @@
 {
   "description": "法语复习助手 —— 配合孙辉《简明法语教程》的单词与动词变位复习",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "audio"
+      }
+    ],
     "include": []
   },
   "setting": {

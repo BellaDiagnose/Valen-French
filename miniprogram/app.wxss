@@ -1,9 +1,13 @@
-/* app.wxss —— 全局基础样式 */
+/* app.wxss —— 全局基础样式（爱尔兰绿色板，取自 AppIcon #22ac70 → #053a28） */
 page {
-  --color-primary: #3d5bd9;
-  --color-text: #1f2740;
-  --color-text-secondary: #8a93ab;
-  --color-bg: #f4f6fb;
+  --color-primary: #0f8a5a;
+  --color-primary-soft: #22ac70;
+  --color-primary-deep: #053a28;
+  --color-mint: #e4f1e9;
+  --color-text: #10261d;
+  --color-text-secondary: #6b8075;
+  --color-bg: #f2f8f4;
+  --color-line: #d7e7dd;
 
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, sans-serif;
   font-size: 28rpx;

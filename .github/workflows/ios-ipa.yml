@@ -1,0 +1,79 @@
+name: iOS IPA (unsigned)
+
+# 无需本机安装 Xcode：在 GitHub 的 macOS runner 上编译 SwiftUI 工程，产出可侧载的 ipa。
+# 公开仓库标准 runner 不计量分钟数（免费）；私有仓库按 macOS 10x 计费。
+#
+# 用法：Actions 页面 -> iOS IPA (unsigned) -> Run workflow，跑完下载 artifact。
+# 产物是**未签名** ipa，安装时由 iloader / SideStore / Sideloadly 用你自己的 Apple ID 签名。
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'ios-v*'
+
+jobs:
+  build:
+    name: Build ValenFrench.app -> ipa
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcode-select -p
+          swift --version
+
+      # 工程是手写的 project.pbxproj，没有共享 scheme，因此用 -target 而不是 -scheme。
+      # CODE_SIGNING_ALLOWED=NO：跳过签名，产出的 .app 由侧载工具重新签名。
+      - name: Build (Release, unsigned)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ValenFrench.xcodeproj \
+            -target ValenFrench \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            SYMROOT="$PWD/build" \
+            OBJROOT="$PWD/build/obj" \
+            build
+
+      - name: Package ipa
+        working-directory: ios
+        run: |
+          APP="build/Release-iphoneos/ValenFrench.app"
+          if [ ! -d "$APP" ]; then
+            echo "::error::未找到 $APP，编译产物缺失"
+            ls -la build/Release-iphoneos 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "--- Info.plist 关键字段 ---"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP/Info.plist" || true
+
+          rm -rf Payload ValenFrench-unsigned.ipa
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          # 不压缩已经是压缩格式的资源，体积更接近 xcodebuild 产物
+          zip -qry ValenFrench-unsigned.ipa Payload
+          ls -lh ValenFrench-unsigned.ipa
+          echo "--- ipa 内顶层结构 ---"
+          unzip -l ValenFrench-unsigned.ipa | head -20
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ValenFrench-unsigned-ipa
+          path: ios/ValenFrench-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30

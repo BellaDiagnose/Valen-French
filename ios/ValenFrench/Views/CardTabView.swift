@@ -222,7 +222,7 @@ struct FlipCardView: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Theme.surface)
         )
-        .shadow(color: Color(hex: 0x1F2740).opacity(0.06), radius: 14, x: 0, y: 6)
+        .shadow(color: Theme.ink.opacity(0.06), radius: 14, x: 0, y: 6)
     }
 
     // MARK: 变位表（内嵌）

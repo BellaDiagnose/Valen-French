@@ -14,7 +14,7 @@
       <view class="float-face float-front">
         <view
           class="ring-track"
-          style="background: conic-gradient(#3d5bd9 0%, #5b7cf0 {{ringPercent}}%, #edf0f8 {{ringPercent}}%, #edf0f8 100%)"
+          style="background: conic-gradient(#0f8a5a 0%, #22ac70 {{ringPercent}}%, #e8f1ec {{ringPercent}}%, #e8f1ec 100%)"
         >
           <view class="ring-inner">
             <text class="ring-num">{{streak}}</text>
@@ -36,6 +36,16 @@
         <view class="float-back-hint">点击球体翻回</view>
       </view>
     </view>
+  </view>
+
+  <!-- 科学入口：初二生物 / 化学双语知识点（避开右上角悬浮球） -->
+  <view class="science-entry" bindtap="goScience">
+    <view class="science-entry-icon">🧪</view>
+    <view class="science-entry-text">
+      <view class="science-entry-title">初二科学 · 生物 / 化学</view>
+      <view class="science-entry-sub">上海新教材 × 爱尔兰 Leaving Certificate 双语知识点与公式</view>
+    </view>
+    <view class="science-entry-arrow">→</view>
   </view>
 
   <!-- Tab 切换（5个） -->

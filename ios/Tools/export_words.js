@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * 把小程序的数据模块无损导出为 iOS 端使用的 Words.json
+ * 把小程序的数据模块无损导出为 iOS + PWA 共用的 Words.json
  *
  *   node ios/Tools/export_words.js
  *
  * 数据源：miniprogram/pages/french/{data,enavant,conjugation}.js
  * 输出：  ios/ValenFrench/Resources/Words.json
+ *         pwa/data/words.json
  *
- * 改了词库/例句/变位后重新执行本脚本即可，iOS 端无需改代码。
+ * 改了词库/例句/变位后重新执行本脚本即可，iOS 与 PWA 两端无需改代码。
  */
 const fs = require('fs');
 const path = require('path');
@@ -85,10 +86,20 @@ const out = {
   }
 };
 
-const target = path.join(root, 'ios/ValenFrench/Resources/Words.json');
-fs.writeFileSync(target, JSON.stringify(out));
+const json = JSON.stringify(out);
 
-const kb = (fs.statSync(target).size / 1024).toFixed(0);
-console.log(`✓ ${target} (${kb}KB)`);
+// 1) iOS：打进 app bundle
+const iosTarget = path.join(root, 'ios/ValenFrench/Resources/Words.json');
+fs.writeFileSync(iosTarget, json);
+
+// 2) PWA：作为被 Service Worker 预缓存的离线数据
+const pwaDir = path.join(root, 'pwa/data');
+fs.mkdirSync(pwaDir, { recursive: true });
+const pwaTarget = path.join(pwaDir, 'words.json');
+fs.writeFileSync(pwaTarget, json);
+
+const kb = (fs.statSync(iosTarget).size / 1024).toFixed(0);
+console.log(`✓ ${iosTarget} (${kb}KB)`);
+console.log(`✓ ${pwaTarget} (${kb}KB)`);
 console.log(`  词条：En Avant ${enavant.length} / 简明法语 ${simple.length}`);
 console.log(`  动词 ${verbs.length}（五时态）· 词卡变位 ${Object.keys(conjugations).length} · 语法 ${grammarSimple.length} 课 · 知识点 ${E.enavantPoints.length} 条 / ${E.enavantUnits.length} 单元`);

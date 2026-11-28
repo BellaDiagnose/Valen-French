@@ -1,6 +1,6 @@
 # BELLA 助手 · iOS 原生版
 
-法语复习 App 的 SwiftUI 原生实现，与仓库内微信小程序（`miniprogram/`）功能对齐、数据同源。仓库总览（两端对照）见 [`../README.md`](../README.md)。
+法语复习 App 的 SwiftUI 原生实现，与仓库内微信小程序（`miniprogram/`）、PWA（`pwa/`）功能对齐、数据同源。仓库总览（三端对照）见 [`../README.md`](../README.md)。
 
 ## 打开与运行
 
@@ -43,14 +43,16 @@ ios/
 │   ├── Design/         Theme（色板、卡片、按钮、Toast）
 │   ├── Views/          Card / Quiz / Verb / Plan / Points / FloatingRing / ForceQuiz
 │   ├── Resources/      Words.json（357KB，全部词库与知识点）
-│   ├── Assets.xcassets
+│   ├── Assets.xcassets AppIcon（1024，由 Tools/make_appicon.py 生成）
 │   └── Info.plist      CFBundleDisplayName = BELLA 助手
-└── Tools/export_words.js                   从小程序数据生成 Words.json
+├── Design/             设计稿导出（appicon-preview.png）
+├── Tools/export_words.js                   从小程序数据生成 Words.json（同时写入 pwa/data/）
+└── Tools/make_appicon.py                   生成 AppIcon 与 PWA 图标（爱尔兰三叶草 + BELLA 字标）
 ```
 
 ## 数据流
 
-`miniprogram/pages/french/*.js` →（`node ios/Tools/export_words.js`）→ `ValenFrench/Resources/Words.json` → `WordBank` 解码 → `AppStore`。
+`miniprogram/pages/french/*.js` →（`node ios/Tools/export_words.js`）→ `ValenFrench/Resources/Words.json` + `pwa/data/words.json` → `WordBank` 解码 → `AppStore`。
 
 改了词库、例句或变位后，只需重跑导出脚本，iOS 端不用改代码：
 
@@ -58,12 +60,29 @@ ios/
 node ios/Tools/export_words.js
 ```
 
+## App 图标
+
+图标由 `ios/Tools/make_appicon.py` 用代码绘制（Pillow + numpy，4× 超采样后缩放），不依赖任何外部素材：
+
+```bash
+python3 ios/Tools/make_appicon.py --preview
+# → ValenFrench/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+# → Design/appicon-preview.png（圆角预览，模拟主屏效果）
+# → pwa/icons/{icon-192,icon-512,icon-maskable-512,apple-touch-icon-180}.png
+```
+
+设计：爱尔兰绿渐变底（`#22AC70` → `#053A28`）+ 白色三叶草 + Avenir Next Heavy 的 `BELLA` 字标。三叶草三片叶由心形参数方程生成（叶尖汇于中心、叶缘外翻成缺口），叶宽/间隙/茎宽集中在脚本顶部 `SHAMROCK` 常量；底色改 `GREEN_TOP` / `GREEN_BOTTOM` 即可。输出 1024×1024 RGB 无 alpha，符合 App Store 要求。
+
 ## 记忆曲线（与 study.js 一致）
 
 - 阶段间隔 `1 / 2 / 4 / 7 / 15 / 30 / 60` 天，到达第 7 阶段视为「已固化」。
 - 每日新词默认 20，动态区间 10–30：自测正确率 ≥ 85% 加 5，< 60% 减 5，昨日完成率 < 50% 再减 5。
 - 间隔 ≥ 3 天打开 → 强制热身自测 10 题，答完按正确率调整次日额度。
 - 进度环 = 今日已背词数（按 `lastReview` 落在今天、且属于当前词库）÷ 今日队列长度，封顶 100%。
+
+## 配色
+
+`Design/Theme.swift` 统一色板，主色取自图标渐变：`primary #0F8A5A`、`primarySoft #22AC70`、`primaryDeep #053A28`，底色 `#F2F8F4`，正文墨绿黑 `#10261D`。`AccentColor.colorset` 同步为 `#0F8A5A`，与小程序 `app.wxss`、PWA `app.css` 的变量保持一致。
 
 ## 说明
 
