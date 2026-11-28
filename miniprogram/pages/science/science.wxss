@@ -1,6 +1,7 @@
 /* pages/science/science.wxss —— 与法语页一致的爱尔兰绿医疗主题 */
 @import "../common/float-nav.wxss";
 @import "../common/plan-panel.wxss";
+@import "../common/recall.wxss";
 
 .page {
   min-height: 100vh;
@@ -496,27 +497,6 @@
   font-size: 26rpx;
   font-weight: 700;
   color: #53675d;
-}
-.seg {
-  flex: 1;
-  display: flex;
-  background: #e6f1ea;
-  border-radius: 14rpx;
-  padding: 6rpx;
-}
-.seg-item {
-  flex: 1;
-  text-align: center;
-  padding: 14rpx 0;
-  font-size: 24rpx;
-  font-weight: 600;
-  color: #5e7368;
-  border-radius: 10rpx;
-}
-.seg-item.active {
-  background: #ffffff;
-  color: #0f8a5a;
-  box-shadow: 0 4rpx 10rpx rgba(15, 138, 90, 0.16);
 }
 .quiz-meta {
   display: flex;

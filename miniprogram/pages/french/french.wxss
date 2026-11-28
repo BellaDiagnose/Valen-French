@@ -1,6 +1,7 @@
 /* pages/french/french.wxss —— 中学生风格：清爽、专注、对比清晰 */
 @import "../common/float-nav.wxss";
 @import "../common/plan-panel.wxss";
+@import "../common/recall.wxss";
 
 .page {
   min-height: 100vh;

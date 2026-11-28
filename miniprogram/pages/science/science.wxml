@@ -1,4 +1,5 @@
 <!--pages/science/science.wxml —— 科学：七+八年级生物 / 八年级化学双语知识点 + 公式-->
+<import src="../common/recall.wxml" />
 <view class="page">
 
   <!-- 右上角悬浮球：可拖动，点击翻面；正面当前模块进度，背面模块导航 -->
@@ -161,13 +162,20 @@
   <view wx:if="{{activeTab === 'quiz'}}" class="panel">
     <view class="quiz-settings">
       <view class="setting-row">
+        <text class="setting-label">方式</text>
+        <view class="seg">
+          <view class="seg-item {{quizWay === 'choice' ? 'active' : ''}}" data-key="choice" bindtap="onQuizWayChange">四选一</view>
+          <view class="seg-item {{quizWay === 'recall' ? 'active' : ''}}" data-key="recall" bindtap="onQuizWayChange">默写</view>
+        </view>
+      </view>
+      <view class="setting-row">
         <text class="setting-label">题目</text>
         <view class="seg">
           <view class="seg-item {{quizMode === 'point' ? 'active' : ''}}" data-key="point" bindtap="onQuizModeChange">术语互译</view>
           <view class="seg-item {{quizMode === 'formula' ? 'active' : ''}}" data-key="formula" bindtap="onQuizModeChange">公式配对</view>
         </view>
       </view>
-      <view class="setting-row">
+      <view wx:if="{{quizWay === 'choice'}}" class="setting-row">
         <text class="setting-label">方向</text>
         <view class="seg">
           <view class="seg-item {{quizLang === 'en2zh' ? 'active' : ''}}" data-key="en2zh" bindtap="onQuizLangChange">英 → 中</view>
@@ -181,12 +189,14 @@
       <view class="quiz-reset" bindtap="resetQuizStats">重置</view>
     </view>
 
-    <view wx:if="{{quiz}}" class="quiz-question">
-      <view class="quiz-mode-tag">{{subject === 'bio' ? '生物' : '化学'}} · {{quizMode === 'point' ? '术语' : '公式'}}</view>
-      <view class="quiz-word">{{quiz.answer.front}}</view>
-      <view class="quiz-hint" wx:if="{{quiz.answer.hint}}">{{quiz.answer.hint}}</view>
-      <view class="quiz-qhint">选出正确的{{quizLang === 'en2zh' ? '中文' : '英文'}}</view>
-    </view>
+    <!-- 四选一 -->
+    <block wx:if="{{quizWay === 'choice'}}">
+      <view wx:if="{{quiz}}" class="quiz-question">
+        <view class="quiz-mode-tag">{{subject === 'bio' ? '生物' : '化学'}} · {{quizMode === 'point' ? '术语' : '公式'}}</view>
+        <view class="quiz-word">{{quiz.answer.front}}</view>
+        <view class="quiz-hint" wx:if="{{quiz.answer.hint}}">{{quiz.answer.hint}}</view>
+        <view class="quiz-qhint">选出正确的{{quizLang === 'en2zh' ? '中文' : '英文'}}</view>
+      </view>
 
     <view wx:if="{{quiz}}" class="options">
       <view
@@ -205,6 +215,12 @@
       {{quizCorrect ? '答对了 ✓' : '正确答案：' + quiz.answer.back}}
     </view>
     <view wx:if="{{quizAnswered}}" class="btn-primary quiz-next" bindtap="nextQuiz">下一题 →</view>
+    </block>
+
+    <!-- 默写 -->
+    <block wx:if="{{quizWay === 'recall' && recall}}">
+      <template is="recall" data="{{rl: recall}}" />
+    </block>
   </view>
 
   <!-- ========== 模块四：复习计划 ========== -->

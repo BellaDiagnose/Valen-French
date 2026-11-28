@@ -1,0 +1,191 @@
+/* pages/common/recall.wxss —— 自测「默写」面板（法语页 / 科学页共用）
+   结构：题面卡 → 提示条 → 输入框 → 两个按钮 → 判分结果 → 下一题 */
+
+/* 方式切换分段控件（自测 panel 共用；法语页 / 科学页都只在这里定义一次） */
+.seg {
+  flex: 1;
+  display: flex;
+  background: #e6f1ea;
+  border-radius: 14rpx;
+  padding: 6rpx;
+}
+.seg-item {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #5e7368;
+  border-radius: 10rpx;
+}
+.seg-item.active {
+  background: #ffffff;
+  color: #0f8a5a;
+  box-shadow: 0 4rpx 10rpx rgba(15, 138, 90, 0.16);
+}
+/* 法语页顶部方式条：右侧让出悬浮球 */
+.quiz-way {
+  padding-right: 200rpx;
+  margin-bottom: 8rpx;
+}
+.quiz-way-desc {
+  font-size: 22rpx;
+  color: #8ea196;
+  line-height: 1.5;
+  padding-right: 180rpx;
+  margin-bottom: 18rpx;
+}
+
+.recall-card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 40rpx 30rpx 36rpx;
+  margin-bottom: 18rpx;
+  text-align: center;
+  box-shadow: 0 10rpx 30rpx rgba(16, 38, 29, 0.08);
+}
+.recall-tag {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: top;
+  font-size: 22rpx;
+  color: #0f8a5a;
+  background: #e4f1e9;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  margin-bottom: 22rpx;
+}
+.recall-prompt {
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #14352a;
+  line-height: 1.4;
+}
+/* 公式默写：题干下面给中文文字表达式 */
+.recall-sub {
+  margin-top: 14rpx;
+  font-size: 25rpx;
+  line-height: 1.6;
+  color: #445d52;
+  padding: 0 10rpx;
+}
+.recall-qhint {
+  font-size: 24rpx;
+  color: #8ea196;
+  margin-top: 16rpx;
+}
+
+/* 提示条：只给骨架（首字母 / 词数 / 物质个数），不给答案 */
+.recall-hintbar {
+  display: flex;
+  align-items: center;
+  background: #eef7f2;
+  border-radius: 14rpx;
+  padding: 16rpx 22rpx;
+  margin-bottom: 18rpx;
+}
+.recall-hintbar-label {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #0f8a5a;
+  background: #d7ede1;
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  margin-right: 14rpx;
+}
+.recall-hintbar-text {
+  font-size: 23rpx;
+  color: #445d52;
+  line-height: 1.5;
+}
+
+.recall-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 108rpx;
+  padding: 26rpx 28rpx;
+  background: #ffffff;
+  border: 2rpx solid #d7e7dd;
+  border-radius: 18rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #14352a;
+  letter-spacing: 1rpx;
+  margin-bottom: 18rpx;
+  box-shadow: 0 4rpx 14rpx rgba(16, 38, 29, 0.04);
+}
+.recall-ph {
+  color: #b3c4ba;
+  font-weight: 400;
+  font-size: 26rpx;
+}
+.recall-input.st-right { border-color: #1f9d63; background: #f2fbf6; }
+.recall-input.st-near  { border-color: #d6a13c; background: #fdf9ef; }
+.recall-input.st-wrong { border-color: #d9705f; background: #fdf4f2; }
+
+.recall-actions {
+  display: flex;
+  gap: 16rpx;
+}
+.recall-btn {
+  flex: 1;
+  padding: 24rpx 0;
+  font-size: 28rpx;
+}
+.recall-reveal {
+  color: #8a6a52;
+  background: #f7f1e9;
+  border-color: #ecdfd0;
+}
+
+.recall-result {
+  border-radius: 18rpx;
+  padding: 22rpx 26rpx;
+  margin-bottom: 4rpx;
+}
+.recall-result.st-right { background: #e9f8f0; }
+.recall-result.st-near  { background: #fdf4e2; }
+.recall-result.st-wrong { background: #fbeceb; }
+.recall-status {
+  font-size: 28rpx;
+  font-weight: 800;
+  margin-bottom: 12rpx;
+}
+.st-right .recall-status { color: #17804f; }
+.st-near .recall-status  { color: #a9762a; }
+.st-wrong .recall-status { color: #b9533f; }
+
+.recall-answer-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.recall-answer-label {
+  font-size: 22rpx;
+  color: #6b8075;
+  margin-right: 14rpx;
+}
+.recall-answer-text {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #14352a;
+  word-break: break-all;
+}
+.recall-extra {
+  margin-top: 14rpx;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #5b6f65;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.recall-next {
+  margin-top: 24rpx;
+}

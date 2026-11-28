@@ -1,4 +1,5 @@
 <!--pages/french/french.wxml-->
+<import src="../common/recall.wxml" />
 <view class="page">
 
   <!-- 右上角悬浮球：可拖动，点击翻面；正面当前模块进度，背面模块导航 -->
@@ -65,35 +66,53 @@
   </view>
 
   <!-- ========== 模块二：自测 ========== -->
-  <view wx:if="{{activeTab === 'quiz' && quiz}}" class="panel">
+  <view wx:if="{{activeTab === 'quiz'}}" class="panel">
+    <!-- 方式切换：四选一 / 默写（默写＝看中文自己写，不带选项） -->
+    <view class="quiz-way">
+      <view class="seg">
+        <view class="seg-item {{quizWay === 'choice' ? 'active' : ''}}" data-key="choice" bindtap="onQuizWayChange">四选一</view>
+        <view class="seg-item {{quizWay === 'recall' ? 'active' : ''}}" data-key="recall" bindtap="onQuizWayChange">默写</view>
+      </view>
+    </view>
+    <view class="quiz-way-desc">{{quizWay === 'choice' ? '点选项作答，答完看例句' : '看中文自己写，写完对答案'}}</view>
+
     <view class="quiz-meta">
       <view class="quiz-score">正确 {{quizRight}} / {{quizTotal}}</view>
       <view class="quiz-reset" bindtap="resetQuizStats">重置</view>
     </view>
-    <view class="quiz-question">
-      <view class="quiz-mode-tag">{{quiz.mode === 'fr2cn' ? '选出正确的中文意思' : '选出正确的法语单词'}}</view>
-      <view class="quiz-word">{{quiz.mode === 'fr2cn' ? quiz.word.fr : quiz.word.cn}}</view>
-    </view>
-    <view class="options">
-      <view
-        wx:for="{{quiz.options}}" wx:key="id"
-        class="option
-          {{quizAnswered && item.id === quiz.answerId ? 'opt-correct' : ''}}
-          {{quizAnswered && item.id === quizSelectedId && item.id !== quiz.answerId ? 'opt-wrong' : ''}}"
-        data-id="{{item.id}}" bindtap="onSelectOption"
-      >
-        <text class="option-text">{{item.text}}</text>
-        <text wx:if="{{quizAnswered && item.id === quiz.answerId}}" class="option-mark">✓</text>
-        <text wx:elif="{{quizAnswered && item.id === quizSelectedId}}" class="option-mark">✗</text>
+
+    <!-- 四选一 -->
+    <block wx:if="{{quizWay === 'choice'}}">
+      <view wx:if="{{quiz}}" class="quiz-question">
+        <view class="quiz-mode-tag">{{quiz.mode === 'fr2cn' ? '选出正确的中文意思' : '选出正确的法语单词'}}</view>
+        <view class="quiz-word">{{quiz.mode === 'fr2cn' ? quiz.word.fr : quiz.word.cn}}</view>
       </view>
-    </view>
-    <view wx:if="{{quizAnswered}}" class="quiz-feedback {{quizCorrect ? 'fb-right' : 'fb-wrong'}}">
-      <view class="fb-title">{{quizCorrect ? '答对了 ✓' : '答错了 ✗'}}</view>
-      <view wx:if="{{!quizCorrect}}" class="fb-detail">{{quiz.word.fr}} = {{quiz.word.cn}}</view>
-      <view class="fb-example" wx:if="{{quiz.word.example}}">{{quiz.word.example}}</view>
-      <view class="fb-example-cn" wx:if="{{quiz.word.exampleCn}}">{{quiz.word.exampleCn}}</view>
-    </view>
-    <view class="btn-primary" bindtap="nextQuiz">下一题 →</view>
+      <view class="options">
+        <view
+          wx:for="{{quiz.options}}" wx:key="id"
+          class="option
+            {{quizAnswered && item.id === quiz.answerId ? 'opt-correct' : ''}}
+            {{quizAnswered && item.id === quizSelectedId && item.id !== quiz.answerId ? 'opt-wrong' : ''}}"
+          data-id="{{item.id}}" bindtap="onSelectOption"
+        >
+          <text class="option-text">{{item.text}}</text>
+          <text wx:if="{{quizAnswered && item.id === quiz.answerId}}" class="option-mark">✓</text>
+          <text wx:elif="{{quizAnswered && item.id === quizSelectedId}}" class="option-mark">✗</text>
+        </view>
+      </view>
+      <view wx:if="{{quizAnswered}}" class="quiz-feedback {{quizCorrect ? 'fb-right' : 'fb-wrong'}}">
+        <view class="fb-title">{{quizCorrect ? '答对了 ✓' : '答错了 ✗'}}</view>
+        <view wx:if="{{!quizCorrect}}" class="fb-detail">{{quiz.word.fr}} = {{quiz.word.cn}}</view>
+        <view class="fb-example" wx:if="{{quiz.word.example}}">{{quiz.word.example}}</view>
+        <view class="fb-example-cn" wx:if="{{quiz.word.exampleCn}}">{{quiz.word.exampleCn}}</view>
+      </view>
+      <view class="btn-primary" bindtap="nextQuiz">下一题 →</view>
+    </block>
+
+    <!-- 默写 -->
+    <block wx:if="{{quizWay === 'recall' && recall}}">
+      <template is="recall" data="{{rl: recall}}" />
+    </block>
   </view>
 
   <!-- ========== 模块三：动词变位 ========== -->

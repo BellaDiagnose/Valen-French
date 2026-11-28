@@ -4,6 +4,7 @@ const { enavantWords, enavantPoints, enavantExamples, enavantUnits } = require('
 const S = require('./study.js');
 const C = require('./conjugation.js');
 const FLOAT_NAV = require('../common/float-nav.js');
+const R = require('../common/recall.js');
 
 // ============ 本地缓存 key ============
 const MEMORY_KEY = 'french_memory_v2';        // 记忆档案 { gid: {stage,dueAt,lastReview} }
@@ -118,6 +119,8 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     // —— 自测 ——
     quiz: null, quizAnswered: false, quizSelectedId: -1,
     quizCorrect: false, quizTotal: 0, quizRight: 0, askedIds: [],
+    quizWay: 'choice',      // choice = 四选一 / recall = 默写
+    recall: null,
 
     // —— 变位表 ——
     verbs: verbList, verbIndex: 0, currentVerb: verbList[0],
@@ -188,6 +191,7 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       this.rebuildForSource(source);
       this.buildPoints();
       this.buildQuiz();
+      if (this.data.showForceQuiz) this.buildChoiceQuiz();
       this.initRing(this.ringPercentOf(plan, memory));
       this.syncFloatNav();
     });
@@ -437,7 +441,7 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     // 计划页顶部是统计卡和主按钮，球停到右下角；其余 tab 回到右上角
     FLOAT_NAV.dockFloat(this, key === 'plan' ? 'bottom' : 'top');
     this.setData({ activeTab: key });
-    if (key === 'quiz' && !this.data.quiz) this.buildQuiz();
+    if (key === 'quiz' && !this.data.quiz && !this.data.recall) this.buildQuiz();
   },
 
   // ============ 单词卡 ============
@@ -485,14 +489,33 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   },
 
   // ============ 自测 ============
-  buildQuiz() {
-    const poolBase = LIBS[this.data.source].words;
+  // 出题池：四选一用当前词库全部词条；默写只看有法语原形的词条
+  quizPool(forRecall) {
+    const words = LIBS[this.data.source].words;
+    const all = forRecall ? words.filter(w => w.fr) : words;
     const { askedIds } = this.data;
-    let pool = poolBase.filter(w => askedIds.indexOf(w.gid) === -1);
-    if (pool.length < 4) { pool = poolBase.slice(); this.setData({ askedIds: [] }); }
+    let pool = all.filter(w => askedIds.indexOf(w.gid) === -1);
+    if (pool.length < 4) { pool = all.slice(); this.setData({ askedIds: [] }); }
+    return { pool, all };
+  },
+
+  onQuizWayChange(e) {
+    const way = e.currentTarget.dataset.key;
+    if (way === this.data.quizWay) return;
+    this.setData({ quizWay: way, quiz: null, recall: null, askedIds: [] }, () => this.buildQuiz());
+  },
+
+  buildQuiz() {
+    if (this.data.quizWay === 'recall') { this.buildRecall(); return; }
+    this.buildChoiceQuiz();
+  },
+
+  // 四选一（强制热身关卡也走这里，不受「默写」开关影响）
+  buildChoiceQuiz() {
+    const { pool, all } = this.quizPool(false);
     const word = pool[Math.floor(Math.random() * pool.length)];
     const mode = this.data.quizTotal % 2 === 0 ? 'fr2cn' : 'cn2fr';
-    const distractors = poolBase.filter(w => w.gid !== word.gid)
+    const distractors = all.filter(w => w.gid !== word.gid)
       .sort(() => Math.random() - 0.5).slice(0, 3);
     const options = [word].concat(distractors)
       .map(w => ({ id: w.gid, text: mode === 'fr2cn' ? w.cn : w.fr }))
@@ -503,6 +526,71 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       askedIds: this.data.askedIds.concat(word.gid)
     });
   },
+
+  // 默写：看中文写法语原形；提示只给首字母、词数、字母数
+  buildRecall() {
+    const { pool } = this.quizPool(true);
+    const word = pool[Math.floor(Math.random() * pool.length)];
+    const unitText = this.data.source === 'simple'
+      ? `第 ${word.unit} 课` : `第 ${word.lesson} 单元`;
+    // En Avant 的 pos 位存的是单元主题（一句法语长标题），只有简明法语的 n.f. / v.i. 才值得放进来
+    const rawPos = word.pos || word.cat || '';
+    const pos = (rawPos.length <= 8 && !/\s/.test(rawPos)) ? rawPos : '';
+    const example = word.example
+      ? `${word.example}${word.exampleCn ? '　' + word.exampleCn : ''}` : '';
+    this.setData({
+      recall: {
+        gid: word.gid,
+        tag: `${LIBS[this.data.source].name} · ${unitText}${pos ? ' · ' + pos : ''}`,
+        prompt: word.cn,
+        qhint: '看中文写出法语原形 · 大小写不限，重音写错算「差一点」',
+        mask: R.hintOf(word.fr, 'word'),
+        placeholder: '在这里写法语单词',
+        input: '', answered: false, status: '', statusText: '',
+        answer: word.fr, extra: example
+      },
+      askedIds: this.data.askedIds.concat(word.gid)
+    });
+  },
+
+  onRecallInput(e) {
+    if (!this.data.recall) return;
+    this.setData({ 'recall.input': e.detail.value });
+  },
+
+  submitRecall() {
+    const rl = this.data.recall;
+    if (!rl || rl.answered) return;
+    const res = R.judge(rl.input, rl.answer, 'word');
+    if (res === 'empty') {
+      wx.showToast({ title: '先写一点再看答案', icon: 'none' });
+      return;
+    }
+    this.settleRecall(res);
+  },
+
+  revealRecall() {
+    const rl = this.data.recall;
+    if (!rl || rl.answered) return;
+    this.settleRecall('wrong');
+  },
+
+  settleRecall(status) {
+    const rl = this.data.recall;
+    const correct = status !== 'wrong';
+    this.advance(rl.gid, correct ? 1 : -1, true);
+    const texts = {
+      right: '写对了 ✓',
+      near: '差一点 · 重音或连字符写漏了，抄一遍',
+      wrong: '没写对 · 抄一遍再下一题'
+    };
+    this.setData({
+      recall: Object.assign({}, rl, { answered: true, status, statusText: texts[status] }),
+      quizTotal: this.data.quizTotal + 1,
+      quizRight: this.data.quizRight + (correct ? 1 : 0)
+    });
+  },
+
   onSelectOption(e) {
     if (this.data.quizAnswered) return;
     const gid = e.currentTarget.dataset.id;
@@ -551,10 +639,10 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
         title: `热身完成 ${Math.round(accuracy * 100)}% · 明日${plan.dailyNewCount}词/天`,
         icon: 'none', duration: 2500
       });
-      this.buildQuiz();
+      this.buildChoiceQuiz();
       return;
     }
-    this.setData({ forceQuizLeft: left }, () => this.buildQuiz());
+    this.setData({ forceQuizLeft: left }, () => this.buildChoiceQuiz());
   },
 
   // ============ 变位背诵（记忆曲线） ============

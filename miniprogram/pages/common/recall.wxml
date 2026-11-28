@@ -1,0 +1,43 @@
+<!--pages/common/recall.wxml —— 自测「默写」题面（法语页 / 科学页共用）
+    页面把它 <import> 进来后：<template is="recall" data="{{rl: recall}}" />
+    事件处理器由页面提供：onRecallInput / submitRecall / revealRecall / nextQuiz -->
+<template name="recall">
+  <view class="recall-card">
+    <view class="recall-tag">{{rl.tag}}</view>
+    <view class="recall-prompt">{{rl.prompt}}</view>
+    <view wx:if="{{rl.sub}}" class="recall-sub">{{rl.sub}}</view>
+    <view class="recall-qhint">{{rl.qhint}}</view>
+  </view>
+
+  <view class="recall-hintbar">
+    <text class="recall-hintbar-label">提示</text>
+    <text class="recall-hintbar-text">{{rl.mask}}</text>
+  </view>
+
+  <input
+    class="recall-input {{rl.answered ? 'st-' + rl.status : ''}}"
+    value="{{rl.input}}"
+    disabled="{{rl.answered}}"
+    confirm-type="done"
+    placeholder="{{rl.placeholder}}"
+    placeholder-class="recall-ph"
+    bindinput="onRecallInput"
+    bindconfirm="submitRecall"
+  />
+
+  <view wx:if="{{!rl.answered}}" class="recall-actions">
+    <view class="btn-primary recall-btn" bindtap="submitRecall">对答案 ↵</view>
+    <view class="btn-outline recall-btn recall-reveal" bindtap="revealRecall">不会，看答案</view>
+  </view>
+
+  <view wx:else class="recall-result st-{{rl.status}}">
+    <view class="recall-status">{{rl.statusText}}</view>
+    <view class="recall-answer-row">
+      <text class="recall-answer-label">正确答案</text>
+      <text class="recall-answer-text">{{rl.answer}}</text>
+    </view>
+    <view wx:if="{{rl.extra}}" class="recall-extra">{{rl.extra}}</view>
+  </view>
+
+  <view wx:if="{{rl.answered}}" class="btn-primary recall-next" bindtap="nextQuiz">下一题 →</view>
+</template>

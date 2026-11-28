@@ -6,6 +6,7 @@
 
 const S = require('../french/study.js');
 const FLOAT_NAV = require('../common/float-nav.js');
+const R = require('../common/recall.js');
 const B = require('./data-bio.js');
 const C = require('./data-chem.js');
 const F = require('./data-formula.js');
@@ -107,6 +108,8 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     // —— 自测 ——
     quizMode: 'point',      // point = 术语互译 / formula = 公式配对
     quizLang: 'en2zh',      // en2zh / zh2en
+    quizWay: 'choice',      // choice = 四选一 / recall = 默写
+    recall: null,
     quiz: null,
     quizAnswered: false,
     quizSelectedId: -1,
@@ -187,7 +190,7 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     // 计划页顶部是统计卡和主按钮，球停到右下角；其余 tab 回到右上角
     FLOAT_NAV.dockFloat(this, key === 'plan' ? 'bottom' : 'top');
     this.setData(patch, () => {
-      if (key === 'quiz' && !this.data.quiz) this.buildQuiz();
+      if (key === 'quiz' && !this.data.quiz && !this.data.recall) this.buildQuiz();
       if (key === 'plan') this.refreshPlan();
       if (key === 'point' && !this.data.pointQueue) this.showPoint(0);
     });
@@ -594,13 +597,19 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
 
   // ==================== 自测 ====================
   onQuizModeChange(e) {
-    this.setData({ quizMode: e.currentTarget.dataset.key, quiz: null, askedIds: [] },
+    this.setData({ quizMode: e.currentTarget.dataset.key, quiz: null, recall: null, askedIds: [] },
       () => this.buildQuiz());
   },
 
   onQuizLangChange(e) {
     this.setData({ quizLang: e.currentTarget.dataset.key, quiz: null },
       () => this.buildQuiz());
+  },
+
+  onQuizWayChange(e) {
+    const way = e.currentTarget.dataset.key;
+    if (way === this.data.quizWay) return;
+    this.setData({ quizWay: way, quiz: null, recall: null, askedIds: [] }, () => this.buildQuiz());
   },
 
   quizPool() {
@@ -622,6 +631,11 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   },
 
   buildQuiz() {
+    if (this.data.quizWay === 'recall') { this.buildRecall(); return; }
+    this.buildChoiceQuiz();
+  },
+
+  buildChoiceQuiz() {
     const pool = this.quizPool();
     if (!pool.length) return;
     const { askedIds } = this.data;
@@ -643,6 +657,116 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       quizCorrect: false,
       askedIds: this.data.askedIds.concat(answer.gid)
     });
+  },
+
+  // 默写题池：术语 → 中文写英文；公式 → 只留能真正写出来的化学式 / 计算式（文字型说明跳过）
+  recallPool() {
+    const subject = this.data.subject;
+    const subjectName = subject === 'bio' ? '生物' : '化学';
+    if (this.data.quizMode === 'formula') {
+      return formulasOf(subject)
+        .filter((f) => R.isDictatableFormula(f.formula))
+        .map((f) => ({
+          gid: 'f' + f.id,
+          kind: 'chem',
+          tag: `${subjectName} · 公式默写`,
+          prompt: f.cn,
+          sub: f.expr,
+          answer: f.formula,
+          extra: f.cond ? `条件：${f.cond}` : ''
+        }));
+    }
+    return BANK[subject].points.map((p) => ({
+      gid: p.gid,
+      kind: 'term',
+      tag: p.chapter,
+      prompt: p.cn,
+      sub: '',
+      answer: p.en,
+      extra: p.defCn
+    }));
+  },
+
+  buildRecall() {
+    const all = this.recallPool();
+    if (!all.length) {
+      wx.showToast({ title: '这一类没有可默写的条目', icon: 'none' });
+      return;
+    }
+    const { askedIds } = this.data;
+    let pool = all.filter((q) => askedIds.indexOf(q.gid) === -1);
+    let base = askedIds;
+    if (!pool.length) { pool = all.slice(); base = []; this.setData({ askedIds: [] }); }
+    const q = pool[Math.floor(Math.random() * pool.length)];
+    const isChem = q.kind === 'chem';
+    this.setData({
+      recall: {
+        gid: q.gid,
+        tag: q.tag,
+        prompt: q.prompt,
+        sub: q.sub,
+        qhint: isChem
+          ? '看中文名称与反应描述，写出化学式 · 下标打普通数字即可，→ 可写 = 或 ->'
+          : '看中文写 LC 英文术语 · 首字母大小写不限，the / a 可省略',
+        mask: R.hintOf(q.answer, q.kind),
+        placeholder: isChem ? '例如 6CO2 + 6H2O → C6H12O6 + 6O2' : '在这里写英文术语',
+        input: '', answered: false, status: '', statusText: '',
+        kind: q.kind,
+        answer: q.answer,
+        extra: q.extra
+      },
+      askedIds: base.concat(q.gid)
+    });
+  },
+
+  onRecallInput(e) {
+    if (!this.data.recall) return;
+    this.setData({ 'recall.input': e.detail.value });
+  },
+
+  submitRecall() {
+    const rl = this.data.recall;
+    if (!rl || rl.answered) return;
+    const res = R.judge(rl.input, rl.answer, rl.kind);
+    if (res === 'empty') {
+      wx.showToast({ title: '先写一点再看答案', icon: 'none' });
+      return;
+    }
+    this.settleRecall(res);
+  },
+
+  revealRecall() {
+    const rl = this.data.recall;
+    if (!rl || rl.answered) return;
+    this.settleRecall('wrong');
+  },
+
+  settleRecall(status) {
+    const rl = this.data.recall;
+    const correct = status !== 'wrong';
+    const memory = Object.assign({}, this.data.memory);
+    memory[rl.gid] = S.advanceMemory(memory[rl.gid], correct ? 1 : -1, Date.now());
+    wx.setStorageSync(MEMORY_KEY, memory);
+    const total = this.data.quizTotal + 1;
+    const right = this.data.quizRight + (correct ? 1 : 0);
+    wx.setStorageSync(STATS_KEY, { total, right });
+    const texts = rl.kind === 'chem'
+      ? {
+        right: '写对了 ✓',
+        near: '差一点 · 空格或箭号写法不一致，答案本身对',
+        wrong: '没写对 · 对照答案抄一遍'
+      }
+      : {
+        right: '写对了 ✓',
+        near: '差一点 · 只差重音、连字符或冠词',
+        wrong: '没写对 · 对照答案抄一遍'
+      };
+    this.setData({
+      recall: Object.assign({}, rl, { answered: true, status, statusText: texts[status] }),
+      quizTotal: total,
+      quizRight: right,
+      memory
+    }, () => this.updateProgress());
   },
 
   onSelectOption(e) {
