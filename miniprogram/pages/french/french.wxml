@@ -1,9 +1,8 @@
 <!--pages/french/french.wxml-->
 <import src="../common/recall.wxml" />
-<view class="page">
-
-  <!-- 右上角悬浮球：可拖动，点击翻面；正面当前模块进度，背面模块导航 -->
-  <include src="../common/float-nav.wxml" />
+<!-- 顶栏：home 圆钮 + 标题/科目名 + 进度环下拉（navigationStyle: custom） -->
+<include src="../common/nav-bar.wxml" />
+<view class="page" style="padding-top: {{navTotal}}px; min-height: calc(100vh - {{navTotal}}px);">
 
   <!-- Tab 切换（5个） -->
   <view class="tabs">
@@ -55,7 +54,7 @@
       </view>
     </view>
 
-    <!-- 操作按钮：置于卡片下方，避开右上角悬浮球 -->
+    <!-- 操作按钮：置于卡片下方 -->
     <view class="card-actions">
       <view class="btn-nav" bindtap="prevCard">← 上一个</view>
       <view class="btn-rate btn-remember" bindtap="markRemembered">记住了 ✓</view>

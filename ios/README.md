@@ -1,6 +1,6 @@
 # BELLA 助手 · iOS 原生版
 
-法语复习 App 的 SwiftUI 原生实现，与仓库内微信小程序（`miniprogram/`）、PWA（`pwa/`）功能对齐、数据同源。仓库总览（三端对照）见 [`../README.md`](../README.md)。
+法语复习 App 的 SwiftUI 原生实现，与仓库内微信小程序（`miniprogram/`）功能对齐、数据同源。仓库总览（两端对照）见 [`../README.md`](../README.md)。
 
 ## 打开与运行
 
@@ -25,8 +25,8 @@ open ios/ValenFrench.xcodeproj
 | 变位表 | 39 动词 × 5 时态，遮挡自测 | 同款，逐格点击揭示 |
 | 复习计划 | 待复习/学习中/新词分组、动态额度 | 同款 + 进度条 |
 | 知识点 | En Avant 按单元 / 简明法语按 A1·A2 | 同款 |
-| 进度环 | 右上角悬浮球，可拖动、翻转切词库 | **顶栏右侧圆环**（与左侧 home 同一行），点击展开科目下拉（EA / CF / CH / BI），`Circle().trim` 原生动画填充 |
-| 顶栏 | 原生 navbar：标题「BELLA 助手」 | 同款 + 第二行动态科目名（En Avant / 简明法语 / 化学 / 生物），不再用「科学」泛称 |
+| 进度环 | 顶栏右侧圆环 + 科目下拉（EA / CF / CH / BI） | 同款（与左侧 home 同一行），`Circle().trim` 原生动画填充，点击展开下拉 |
+| 顶栏 | 自定义顶栏：左侧灰色圆形 home、居中「BELLA 助手」+ 第二行科目名 | 同款，科目名随顶栏下拉 / 词库实时变化，不用「科学」泛称 |
 | 强制自测 | 间隔 ≥ 3 天，10 题热身 | 同款，sheet 弹层锁定 tab |
 | 科学（生物 7/8、化学 8） | 独立科学页（每日背诵 / 公式 / 自测 / 复习计划） | 与首页、法语页**平行**的根页面，四 tab 同构，自测含四选一与默写 |
 | 发音 | 已移除（曾用 MP3） | **系统离线 TTS**（`AVSpeechSynthesizer` fr-FR），无需音频文件 |
@@ -44,19 +44,20 @@ ios/
 │   │                   ScienceBank / ScienceStore（Science.json 解码与科学页状态）
 │   ├── Services/       SpeechService（fr-FR TTS）
 │   ├── Design/         Theme（色板、卡片、按钮、Toast）
-│   ├── Views/          Card / Quiz / Verb / Plan / Points / Science / FloatingRing / ForceQuiz
+│   ├── Views/          Home / Card / Quiz / Verb / Plan / Points / Science / NavRingMenu / ForceQuiz
 │   ├── Resources/      Words.json（357KB）+ Science.json（102KB，生物/化学/公式）
 │   ├── Assets.xcassets AppIcon（1024，由 Tools/make_appicon.py 生成）
 │   └── Info.plist      CFBundleDisplayName = BELLA 助手
 ├── Design/             设计稿导出（appicon-preview.png）
-├── Tools/export_words.js                   导出 Words.json + Science.json（同时写入 pwa/data/）
-└── Tools/make_appicon.py                   生成 AppIcon 与 PWA 图标（爱尔兰三叶草 + BELLA 字标）
+├── Tools/export_words.js                   导出 Words.json + Science.json
+├── Tools/make_appicon.py                   生成 AppIcon（爱尔兰三叶草 + BELLA 字标）
+└── Tools/install_iphone.sh                 取最新 ipa → xtool 签名 → 装机（7 天续期）
 ```
 
 ## 数据流
 
-`miniprogram/pages/french/*.js` →（`node ios/Tools/export_words.js`）→ `Words.json` + `pwa/data/words.json` → `WordBank` → `AppStore`；
-`miniprogram/pages/science/*.js` → 同一脚本 → `Science.json` + `pwa/data/science.json` → `ScienceBank` → `ScienceStore` → `ScienceView`。
+`miniprogram/pages/french/*.js` →（`node ios/Tools/export_words.js`）→ `Words.json` → `WordBank` → `AppStore`；
+`miniprogram/pages/science/*.js` → 同一脚本 → `Science.json` → `ScienceBank` → `ScienceStore` → `ScienceView`。
 
 改了词库、例句、变位或科学知识点后，只需重跑导出脚本，iOS 端不用改代码：
 
@@ -72,7 +73,6 @@ node ios/Tools/export_words.js
 python3 ios/Tools/make_appicon.py --preview
 # → ValenFrench/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
 # → Design/appicon-preview.png（圆角预览，模拟主屏效果）
-# → pwa/icons/{icon-192,icon-512,icon-maskable-512,apple-touch-icon-180}.png
 ```
 
 设计：爱尔兰绿渐变底（`#22AC70` → `#053A28`）+ 白色三叶草 + Avenir Next Heavy 的 `BELLA` 字标。三叶草三片叶由心形参数方程生成（叶尖汇于中心、叶缘外翻成缺口），叶宽/间隙/茎宽集中在脚本顶部 `SHAMROCK` 常量；底色改 `GREEN_TOP` / `GREEN_BOTTOM` 即可。输出 1024×1024 RGB 无 alpha，符合 App Store 要求。
@@ -86,7 +86,7 @@ python3 ios/Tools/make_appicon.py --preview
 
 ## 配色
 
-`Design/Theme.swift` 统一色板，主色取自图标渐变：`primary #0F8A5A`、`primarySoft #22AC70`、`primaryDeep #053A28`，底色 `#F2F8F4`，正文墨绿黑 `#10261D`。`AccentColor.colorset` 同步为 `#0F8A5A`，与小程序 `app.wxss`、PWA `app.css` 的变量保持一致。
+`Design/Theme.swift` 统一色板，主色取自图标渐变：`primary #0F8A5A`、`primarySoft #22AC70`、`primaryDeep #053A28`，底色 `#F2F8F4`，正文墨绿黑 `#10261D`。`AccentColor.colorset` 同步为 `#0F8A5A`，与小程序 `app.wxss` 的变量保持一致。
 
 ## 真机安装（无本机 Xcode 的做法）
 

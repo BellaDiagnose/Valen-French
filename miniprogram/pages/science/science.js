@@ -5,7 +5,7 @@
 // 存储键与法语端隔离：science_memory_v1 / science_plan_v1 / science_stats_v1
 
 const S = require('../french/study.js');
-const FLOAT_NAV = require('../common/float-nav.js');
+const NAV = require('../common/nav-bar.js');
 const R = require('../common/recall.js');
 const EQ = require('../common/equation.js');
 const B = require('./data-bio.js');
@@ -17,7 +17,7 @@ const PLAN_KEY = 'science_plan_v1';
 const STATS_KEY = 'science_stats_v1';
 
 // 各类目对应的完整词条。data-bio / data-chem 的 id 已带 b/c 前缀，
-// gid 直接等于 id（b01 / c01），与首页、PWA、iOS 的记忆键完全一致。
+// gid 直接等于 id（b01 / c01），与首页、iOS 的记忆键完全一致。
 function withGid(list) {
   return list.map((p) => Object.assign({}, p, { gid: p.id }));
 }
@@ -49,20 +49,25 @@ function queueTone(mode) {
   return '';
 }
 
-function subjectGids(subject, kind) {
-  return kind === 'formula'
-    ? formulasOf(subject).map((f) => 'f' + f.id)
-    : BANK[subject].points.map((p) => p.gid);
+// 章节 chip 的短名：「第13章 血液循环系统与物质运输」→「第13章」，"LC 衔接专题" → "LC"
+function unitShortLabel(label) {
+  return String(label || '').split(' ')[0] || '';
 }
 
-Page(Object.assign({}, FLOAT_NAV.methods, {
+Page(Object.assign({}, NAV.methods, {
   data: {
     subject: 'bio',
 
-    // —— 悬浮球（模块导航）——
-    floatX: 0, floatY: 0, floatFlipped: false,
-    floatCurrent: 'bio', floatNavItems: [],
-    floatValue: '', floatUnit: '', floatCurrentLabel: '',
+    // —— 顶栏（home 圆钮 + 标题/科目 + 进度环下拉）——
+    navStatusBar: 20, navTotal: 64,
+    navRingSize: 36, navRingRight: 14, navTitleMax: 183, navCaretRight: 13, navMenuTop: 72,
+    navOpen: false,
+    navCurrent: 'bio',
+    navSubject: '',
+    navItems: [],
+    navValue: 0,
+    navUnit: '今日',
+
     tabs: [
       { key: 'point', label: '每日背诵' },
       { key: 'formula', label: '公式' },
@@ -73,6 +78,9 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
 
     // —— 每日背诵（知识点卡组）——
     pointIds: [],
+    pointUnits: [],          // 章节 chip：全部章节 + 各章（短名 + 条数）
+    pointUnitFilter: '',     // 空 = 全部章节
+    pointUnitTitle: '',      // 选中章节的完整名，显示在卡组头
     pointQueue: null,        // 非空 = 从计划清单点进来的临时队列
     pointQueueLabel: '',
     pointQueueTone: '',
@@ -139,7 +147,6 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
 
   // ==================== 生命周期 ====================
   onLoad(options) {
-    FLOAT_NAV.initFloatPosition(this);
     const memory = wx.getStorageSync(MEMORY_KEY) || {};
     const plan = wx.getStorageSync(PLAN_KEY) || S.initPlan(Date.now());
     const stats = wx.getStorageSync(STATS_KEY) || { total: 0, right: 0 };
@@ -150,19 +157,36 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       quizRight: stats.right || 0
     }, () => {
       this.refreshSubject(subject);
-      this.syncFloatNav();
+      this.initNav(subject);
     });
   },
 
-  // ============ 悬浮球：当前模块进度 + 模块导航 ============
-  syncFloatNav() {
+  // ============ 顶栏：当前科目名 + 进度环数值 ============
+  subjectLabel(subject) {
+    return (subject || this.data.subject) === 'chem' ? '化学' : '生物';
+  },
+
+  initNav(subject) {
+    NAV.navInit(this, subject, this.subjectLabel(subject));
+    NAV.navValue(this, this.data.pointTodayDone || 0, '今日');
+  },
+
+  syncNav() {
     const subject = this.data.subject;
-    FLOAT_NAV.syncNavData(this, subject);
-    this.setData({
-      floatValue: this.data.studiedToday || 0,
-      floatUnit: '今日',
-      floatCurrentLabel: subject === 'chem' ? '化学' : '生物'
-    });
+    NAV.navSync(this, subject, this.subjectLabel(subject));
+    NAV.navValue(this, this.data.pointTodayDone || 0, '今日');
+  },
+
+  // 顶栏下拉：化学 / 生物原地切学科，法语两本书换页
+  onNavPick(e) {
+    const key = e.currentTarget.dataset.key;
+    this.setData({ navOpen: false });
+    if (key === this.data.navCurrent) return;
+    if (key === 'chem' || key === 'bio') {
+      this.refreshSubject(key);
+      return;
+    }
+    wx.redirectTo({ url: NAV.targetUrl(key) });
   },
 
   onShow() {
@@ -176,7 +200,6 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     wx.setStorageSync(PLAN_KEY, plan);
     this.setData({ memory, plan }, () => {
       this.updateProgress();
-      this.syncFloatNav();
       if (this.data.activeTab === 'plan') this.refreshPlan();
       // 跨天后卡组要重排；队列模式下不动用户当前队列
       if (this.data.activeTab === 'point' && !this.data.pointQueue) {
@@ -189,10 +212,7 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   onTabChange(e) {
     const key = e.currentTarget.dataset.key;
     if (key === this.data.activeTab) return;
-    const patch = { activeTab: key };
-    // 计划页顶部是统计卡和主按钮，球停到右下角；其余 tab 回到右上角
-    FLOAT_NAV.dockFloat(this, key === 'plan' ? 'bottom' : 'top');
-    this.setData(patch, () => {
+    this.setData({ activeTab: key }, () => {
       if (key === 'quiz' && !this.data.quiz && !this.data.recall) this.buildQuiz();
       if (key === 'plan') this.refreshPlan();
       if (key === 'point' && !this.data.pointQueue) this.showPoint(0);
@@ -209,6 +229,9 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       subject,
       formulaUnits,
       formulaUnitFilter: 0,
+      pointUnits: this.buildPointUnits(subject),
+      pointUnitFilter: '',
+      pointUnitTitle: '',
       activeTab: 'point',
       pointIndex: 0,
       pointQueue: null,
@@ -222,13 +245,45 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       quiz: null,
       askedIds: []
     }, () => {
-      FLOAT_NAV.dockFloat(this, 'top');
       this.showPoint(0);
       this.showFormula(0);
       this.updateProgress();
       this.refreshPlan();
-      this.syncFloatNav();
     });
+  },
+
+  // ==================== 章节筛选 ====================
+  buildPointUnits(subject) {
+    const points = BANK[subject].points;
+    const units = BANK[subject].units.map((u) => ({
+      key: u.key,
+      label: u.label,
+      short: unitShortLabel(u.label),
+      count: points.filter((p) => p.unit === u.key).length
+    }));
+    return [{ key: '', label: '全部章节', short: '全部章节', count: points.length }].concat(units);
+  },
+
+  // 当前科目按章节筛过的知识点池（未选章 = 全科）
+  pointPool() {
+    const points = BANK[this.data.subject].points;
+    const unit = this.data.pointUnitFilter;
+    return unit ? points.filter((p) => p.unit === unit) : points;
+  },
+
+  onPointUnit(e) {
+    const key = e.currentTarget.dataset.key || '';
+    if (key === this.data.pointUnitFilter) return;
+    const unit = BANK[this.data.subject].units.filter((u) => u.key === key)[0];
+    // 手动筛章等于退出计划队列
+    this.setData({
+      pointUnitFilter: key,
+      pointUnitTitle: unit ? unit.label : '',
+      pointQueue: null,
+      pointQueueLabel: '',
+      pointQueueTone: '',
+      pointQueueMode: ''
+    }, () => this.showPoint(0));
   },
 
   // ==================== 通用工具 ====================
@@ -257,28 +312,20 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     return `${d.getMonth() + 1}月${d.getDate()}日`;
   },
 
-  studiedToday(memory) {
-    const today = S.dateStr(Date.now());
-    let n = 0;
-    Object.keys(memory).forEach((gid) => {
-      const m = memory[gid];
-      if (m && m.lastReview) {
-        const d = new Date(m.lastReview);
-        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        if (ds === today) n += 1;
-      }
-    });
-    return n;
-  },
-
   updateProgress() {
-    const memory = this.data.memory;
-    const studied = this.studiedToday(memory);
-    const quota = this.data.plan ? this.data.plan.dailyNewCount : S.DEFAULT_DAILY;
+    const deck = this.deckOf('point');
+    const done = this.reviewedToday('point');
+    const total = deck.ids.length + done;
+    const percent = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
     this.setData({
-      studiedToday: studied,
-      ringPercent: Math.min(100, Math.round((studied / quota) * 100))
-    });
+      pointDeckDue: deck.due.length,
+      pointDeckNew: deck.newIds.length,
+      pointTodayDone: done,
+      pointTodayTotal: total,
+      pointDeckPercent: percent,
+      studiedToday: done,
+      ringPercent: percent
+    }, () => this.syncNav());
   },
 
   // ==================== 每日背诵（知识点卡组） ====================
@@ -293,9 +340,10 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     if (pinned && pinned.date === today) return pinned.ids;
     const quota = plan.dailyNewCount || S.DEFAULT_DAILY;
     const memory = this.data.memory;
-    const ids = subjectGids(subject, 'point')
-      .filter((gid) => !memory[gid])
-      .slice(0, quota);
+    const ids = BANK[subject].points
+      .filter((p) => !memory[p.gid])
+      .slice(0, quota)
+      .map((p) => p.gid);
     const nextQueues = Object.assign({}, queues);
     nextQueues[subject] = { date: today, ids };
     const nextPlan = Object.assign({}, plan, { newQueues: nextQueues });
@@ -309,21 +357,28 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     const memory = this.data.memory;
     const now = Date.now();
     const due = [];
-    subjectGids(this.data.subject, kind).forEach((gid) => {
+    const poolGids = kind === 'formula'
+      ? formulasOf(this.data.subject).map((f) => 'f' + f.id)
+      : this.pointPool().map((p) => p.gid);
+    poolGids.forEach((gid) => {
       const m = memory[gid];
       if (m && m.stage < S.GRADUATED && m.dueAt && m.dueAt <= now) due.push(gid);
     });
     due.sort((a, b) => memory[a].dueAt - memory[b].dueAt);
+    // 新卡队列按科目定一次，但要落在当前章节里才进卡组
     const newIds = kind === 'formula'
       ? []
-      : this.ensureNewQueue().filter((gid) => !memory[gid]);
+      : this.ensureNewQueue().filter((gid) => !memory[gid] && poolGids.indexOf(gid) >= 0);
     return { due, newIds, ids: due.concat(newIds) };
   },
 
   reviewedToday(kind) {
     const today = S.dateStr(Date.now());
     const memory = this.data.memory;
-    return subjectGids(this.data.subject, kind).filter((gid) => {
+    const gids = kind === 'formula'
+      ? formulasOf(this.data.subject).map((f) => 'f' + f.id)
+      : this.pointPool().map((p) => p.gid);
+    return gids.filter((gid) => {
       const m = memory[gid];
       return m && m.lastReview && S.dateStr(m.lastReview) === today;
     }).length;
@@ -336,22 +391,10 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   },
 
   showPoint(i) {
-    const deck = this.deckOf('point');
-    const queued = !!(this.data.pointQueue && this.data.pointQueue.length);
-    const ids = queued ? this.data.pointQueue : deck.ids;
-    const done = this.reviewedToday('point');
-    const total = deck.ids.length + done;
-    const base = {
-      pointIds: ids,
-      pointDeckDue: deck.due.length,
-      pointDeckNew: deck.newIds.length,
-      pointTodayDone: done,
-      pointTodayTotal: total,
-      pointDeckPercent: total ? Math.round((done / total) * 100) : 0,
-      pointFlipped: false
-    };
+    const ids = this.visiblePointIds();
+    const base = { pointIds: ids, pointFlipped: false };
     if (!ids.length) {
-      this.setData(Object.assign(base, { point: null, pointIndex: 0 }));
+      this.setData(Object.assign(base, { point: null, pointIndex: 0 }), () => this.updateProgress());
       return;
     }
     const idx = Math.max(0, Math.min(i, ids.length - 1));
@@ -365,7 +408,7 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       pointStage: mem ? mem.stage : -1,
       pointStageLabel: this.stageLabel(mem ? mem.stage : -1),
       pointNextDue: mem && mem.dueAt ? this.dueDate(mem.dueAt) : ''
-    }));
+    }), () => this.updateProgress());
   },
 
   prevPoint() { this.showPoint(this.data.pointIndex - 1); },
@@ -395,7 +438,6 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     }
     this.setData(patch, () => {
       this.updateProgress();
-      this.syncFloatNav();
       this.showPoint(this.data.pointIndex);
       wx.showToast({
         title: delta > 0 ? `已记住 · ${this.stageLabel(m.stage)}` : '已重置 · 明天再来',
@@ -405,7 +447,6 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   },
 
   goPlan() {
-    FLOAT_NAV.dockFloat(this, 'bottom');
     this.setData({ activeTab: 'plan' }, () => this.refreshPlan());
   },
 
@@ -542,7 +583,6 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   // 从计划清单打开一组卡片队列：mode = review（待复习）/ study（新学）/ browse（学习中、已固化）
   openQueue(kind, ids, mode, start) {
     const idx = Math.max(0, start || 0);
-    FLOAT_NAV.dockFloat(this, 'top');
     const label = queueLabel(mode, ids.length);
     const tone = queueTone(mode);
     if (kind === 'point') {
@@ -560,7 +600,6 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
 
   // 计划页主按钮：回到「每日背诵」，卡组按今日额度和到期重新排
   startTodayDeck() {
-    FLOAT_NAV.dockFloat(this, 'top');
     this.setData({
       activeTab: 'point',
       pointQueue: null, pointQueueLabel: '', pointQueueTone: '', pointQueueMode: ''

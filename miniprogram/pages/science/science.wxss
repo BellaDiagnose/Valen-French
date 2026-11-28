@@ -1,5 +1,5 @@
+@import "../common/nav-bar.wxss";
 /* pages/science/science.wxss —— 与法语页一致的爱尔兰绿医疗主题 */
-@import "../common/float-nav.wxss";
 @import "../common/plan-panel.wxss";
 @import "../common/recall.wxss";
 
@@ -84,14 +84,52 @@
   box-shadow: 0 4rpx 12rpx rgba(15, 138, 90, 0.25);
 }
 
+/* ============ 章节切换 chip（同法语课次条） ============ */
+.unit-picker {
+  display: flex;
+  white-space: nowrap;
+  width: 100%;
+  margin-bottom: 20rpx;
+  padding-bottom: 6rpx;
+}
+.unit-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 116rpx;
+  height: 88rpx;
+  padding: 0 16rpx;
+  text-align: center;
+  margin-right: 10rpx;
+  color: #5e7368;
+  background: #e6f1ea;
+  border-radius: 14rpx;
+  flex-shrink: 0;
+}
+.unit-chip-label {
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.unit-chip-count {
+  font-size: 20rpx;
+  line-height: 1.3;
+  margin-top: 4rpx;
+  opacity: 0.75;
+}
+.unit-chip.active {
+  color: #ffffff;
+  background: #0f8a5a;
+  box-shadow: 0 4rpx 12rpx rgba(15, 138, 90, 0.25);
+}
+
 /* ============ 今日背诵卡头 ============ */
-/* 右侧留出悬浮球：球体 208rpx 宽 + 边距 */
 .deck-head {
   display: flex;
   flex-direction: column;
   gap: 6rpx;
   margin-bottom: 20rpx;
-  padding-right: 240rpx;
 }
 .deck-title {
   font-size: 28rpx;
@@ -183,7 +221,7 @@
   max-width: 440rpx;
 }
 
-/* 计数与阶段靠左排：右上角让给悬浮球，避免球压住文字 */
+/* 计数与阶段靠左排 */
 .card-meta {
   display: flex;
   align-items: center;
@@ -513,8 +551,7 @@
 .quiz-settings {
   background: #ffffff;
   border-radius: 20rpx;
-  /* 右侧留出悬浮球的位置，否则「公式配对 / 中→英」两个选项会被球挡住点不到 */
-  padding: 12rpx 220rpx 12rpx 24rpx;
+  padding: 12rpx 24rpx;
   margin-bottom: 20rpx;
   box-shadow: 0 6rpx 18rpx rgba(16, 38, 29, 0.05);
 }

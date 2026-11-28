@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - 模块导航目标（与小程序 float-nav.js 的 NAV_ITEMS 一致，首页由 navbar 承担）
+// MARK: - 模块导航目标（与小程序 nav-bar.js 的 NAV_ITEMS 一致，首页由 navbar 承担）
 
 enum ModuleNavTarget: String, CaseIterable, Identifiable {
     case enavant, simple, chem, bio

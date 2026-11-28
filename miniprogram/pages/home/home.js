@@ -1,5 +1,5 @@
 // pages/home/home.js —— BELLA 助手独立 landing page（Bento 四模块）
-// 进度口径与 PWA / 法语页一致：已学 = 有记忆记录；固化 = 走完 7 阶段；待复习 = 未固化且已到期。
+// 进度口径与法语页 / iOS 首页一致：已学 = 有记忆记录；固化 = 走完 7 阶段；待复习 = 未固化且已到期。
 
 const { wordList } = require('../french/data.js');
 const { enavantWords } = require('../french/enavant.js');

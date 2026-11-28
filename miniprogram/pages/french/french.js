@@ -3,7 +3,7 @@ const { wordList, verbList, grammarLessons, TENSE_NAMES } = require('./data.js')
 const { enavantWords, enavantPoints, enavantExamples, enavantUnits } = require('./enavant.js');
 const S = require('./study.js');
 const C = require('./conjugation.js');
-const FLOAT_NAV = require('../common/float-nav.js');
+const NAV = require('../common/nav-bar.js');
 const R = require('../common/recall.js');
 
 // ============ 本地缓存 key ============
@@ -46,7 +46,7 @@ function buildGrammarGroups() {
   return Object.keys(groups).map(k => groups[k]);
 }
 
-Page(Object.assign({}, FLOAT_NAV.methods, {
+Page(Object.assign({}, NAV.methods, {
   data: {
     tabs: [
       { key: 'card', label: '单词卡' },
@@ -64,15 +64,17 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     ],
     source: 'enavant',
     sourceName: 'En Avant',
-    // —— 悬浮球（模块导航）——
-    floatX: 0, floatY: 0,
     cardHeight: 420,
-    floatFlipped: false,
-    floatCurrent: 'enavant',
-    floatNavItems: [],
-    floatValue: '',
-    floatUnit: '',
-    floatCurrentLabel: '',
+
+    // —— 顶栏（home 圆钮 + 标题/科目 + 进度环下拉）——
+    navStatusBar: 20, navTotal: 64,
+    navRingSize: 36, navRingRight: 14, navTitleMax: 183, navCaretRight: 13, navMenuTop: 72,
+    navOpen: false,
+    navCurrent: 'enavant',
+    navSubject: '',
+    navItems: [],
+    navValue: 0,
+    navUnit: '天',
 
     // —— 学习计划 ——
     plan: null,
@@ -140,14 +142,15 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
   },
 
   onLoad(options) {
-    // 卡片高度 = 窗口高度 - 非卡片区占用（tab + 课次条 + 底部按钮/提示 + 页面边距，约 470rpx 换算 px）
+    // 卡片高度 = 窗口高度 - 顶栏 - 非卡片区占用（tab + 课次条 + 底部按钮/提示 + 页面边距，约 470rpx）
+    const nav = NAV.navMetrics();
     try {
       const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
       const rpx = info.windowWidth / 750;
-      this.setData({ cardHeight: Math.max(320, Math.round(info.windowHeight - 470 * rpx)) });
+      this.setData({
+        cardHeight: Math.max(280, Math.round(info.windowHeight - nav.navTotal - 470 * rpx - 40))
+      });
     } catch (e) { /* 用默认卡片高度 */ }
-    FLOAT_NAV.initFloatPosition(this);
-
     const querySource = options && (options.source === 'enavant' || options.source === 'simple')
       ? options.source
       : '';
@@ -193,19 +196,32 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       this.buildQuiz();
       if (this.data.showForceQuiz) this.buildChoiceQuiz();
       this.initRing(this.ringPercentOf(plan, memory));
-      this.syncFloatNav();
+      this.initNav(source);
     });
   },
 
-  // ============ 悬浮球：当前模块进度 + 模块导航 ============
-  syncFloatNav() {
+  // ============ 顶栏：当前科目名 + 进度环数值 ============
+  initNav(source) {
+    NAV.navInit(this, source, LIBS[source].name);
+    NAV.navValue(this, this.data.streak || 1, '天');
+  },
+
+  syncNav() {
     const source = this.data.source;
-    FLOAT_NAV.syncNavData(this, source);
-    this.setData({
-      floatValue: this.data.streak || 1,
-      floatUnit: '天',
-      floatCurrentLabel: LIBS[source].name
-    });
+    NAV.navSync(this, source, LIBS[source].name);
+    NAV.navValue(this, this.data.streak || 1, '天');
+  },
+
+  // 顶栏下拉：法语两本书原地换词库，化学 / 生物换页
+  onNavPick(e) {
+    const key = e.currentTarget.dataset.key;
+    this.setData({ navOpen: false });
+    if (key === this.data.navCurrent) return;
+    if (key === 'enavant' || key === 'simple') {
+      this.applySource(key);
+      return;
+    }
+    wx.redirectTo({ url: NAV.targetUrl(key) });
   },
 
   // ============ 词库切换 ============
@@ -214,9 +230,8 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     this.setData({ lessonFilter }, () => this.rebuildForSource(this.data.source));
   },
 
-  onSourceChange(e) {
-    const source = e.currentTarget.dataset.source;
-    this.setData({ floatFlipped: false, lessonFilter: 0 });
+  applySource(source) {
+    this.setData({ lessonFilter: 0 });
     if (source === this.data.source) return;
     wx.setStorageSync(SOURCE_KEY, source);
     const memory = this.data.memory;
@@ -232,7 +247,7 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
     }, () => {
       this.rebuildForSource(source);
       this.initRing(0);
-      this.syncFloatNav();
+      this.syncNav();
     });
   },
 
@@ -408,7 +423,7 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       this.computeStats(words, memory)
     ), () => {
       this.animateRing(this.ringPercentOf(plan, memory));
-      FLOAT_NAV.syncNavData(this, this.data.source);
+      this.syncNav();
     });
 
     if (!silent) {
@@ -438,8 +453,6 @@ Page(Object.assign({}, FLOAT_NAV.methods, {
       wx.showToast({ title: '请先完成强制自测', icon: 'none' });
       return;
     }
-    // 计划页顶部是统计卡和主按钮，球停到右下角；其余 tab 回到右上角
-    FLOAT_NAV.dockFloat(this, key === 'plan' ? 'bottom' : 'top');
     this.setData({ activeTab: key });
     if (key === 'quiz' && !this.data.quiz && !this.data.recall) this.buildQuiz();
   },

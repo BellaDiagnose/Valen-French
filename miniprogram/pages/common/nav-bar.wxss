@@ -1,0 +1,191 @@
+/* pages/common/nav-bar.wxss —— 自定义顶栏（法语页 / 科学页 import） */
+/* 对齐 iOS PageNavBar：白底、底部发丝线、左侧灰圆 home、居中标题 + 科目名、右侧进度环 */
+
+.nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 90;
+  background: #ffffff;
+  border-bottom: 1rpx solid #edf3ef;
+}
+
+.nav-main {
+  position: relative;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  z-index: 3;
+}
+
+/* ---- 左侧 home 圆钮 ---- */
+.nav-home {
+  position: absolute;
+  left: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e9efea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-home-hover {
+  background: #dbe6df;
+}
+
+.nav-home-icon {
+  width: 17px;
+  height: 17px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234A5B52' d='M12 3.1 2.5 11.2h3V21h5.1v-5.5h2.8V21h5.1v-9.8h3z'/%3E%3C/svg%3E");
+}
+
+/* ---- 中间标题 + 科目名 ---- */
+.nav-title-wrap {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #10261d;
+  white-space: nowrap;
+}
+
+.nav-subject {
+  margin-top: 2rpx;
+  font-size: 19rpx;
+  line-height: 1.2;
+  letter-spacing: 0.4rpx;
+  color: #0f8a5a;
+  white-space: nowrap;
+}
+
+/* ---- 右侧进度环 ---- */
+.nav-ring {
+  position: absolute;
+  border-radius: 50%;
+  transition: transform 0.18s ease-out;
+}
+
+.nav-ring-track {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-ring-inner {
+  width: calc(100% - 14rpx);
+  height: calc(100% - 14rpx);
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-ring-num {
+  font-size: 26rpx;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f8a5a;
+}
+
+.nav-ring-unit {
+  margin-top: 2rpx;
+  font-size: 16rpx;
+  line-height: 1;
+  color: #5e7368;
+}
+
+.nav-ring.is-open {
+  transform: scale(0.94);
+}
+
+/* ---- 下拉 ---- */
+.nav-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  background: rgba(16, 38, 29, 0.07);
+}
+
+.nav-menu {
+  position: absolute;
+  z-index: 4;
+  width: 408rpx;
+  padding: 12rpx;
+  background: #ffffff;
+  border: 1rpx solid #e4eee8;
+  border-radius: 32rpx;
+  box-shadow: 0 20rpx 46rpx rgba(16, 38, 29, 0.14);
+}
+
+.nav-caret {
+  position: absolute;
+  top: -11rpx;
+  width: 20rpx;
+  height: 20rpx;
+  background: #ffffff;
+  border-left: 1rpx solid #e4eee8;
+  border-top: 1rpx solid #e4eee8;
+  transform: rotate(45deg);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+  padding: 0 18rpx;
+  border-radius: 22rpx;
+}
+
+.nav-item.active {
+  background: #e4f1e9;
+  box-shadow: inset 0 0 0 2rpx #0f8a5a;
+}
+
+.nav-mark {
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  font-weight: 800;
+  letter-spacing: 0.5rpx;
+}
+
+.nav-label {
+  flex: 1;
+  margin-left: 20rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #10261d;
+}
+
+.nav-check {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #0f8a5a;
+}

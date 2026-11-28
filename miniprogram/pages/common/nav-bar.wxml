@@ -1,0 +1,45 @@
+<!--pages/common/nav-bar.wxml —— 自定义顶栏（法语页 / 科学页 include）-->
+<!--左：home 圆钮；中：BELLA 助手 + 科目名；右：进度环，点击展开科目下拉-->
+<view class="nav" style="padding-top: {{navStatusBar}}px;">
+  <view class="nav-main">
+    <view class="nav-home" bindtap="onNavHome" hover-class="nav-home-hover">
+      <view class="nav-home-icon"></view>
+    </view>
+
+    <view class="nav-title-wrap" style="max-width: {{navTitleMax}}px;">
+      <view class="nav-title">BELLA 助手</view>
+      <view wx:if="{{navSubject}}" class="nav-subject">{{navSubject}}</view>
+    </view>
+
+    <view
+      class="nav-ring {{navOpen ? 'is-open' : ''}}"
+      style="right: {{navRingRight}}px; width: {{navRingSize}}px; height: {{navRingSize}}px;"
+      bindtap="onNavToggle"
+    >
+      <view
+        class="nav-ring-track"
+        style="background: conic-gradient(#0f8a5a 0%, #22ac70 {{ringPercent}}%, #e8f1ec {{ringPercent}}%, #e8f1ec 100%)"
+      >
+        <view class="nav-ring-inner">
+          <text class="nav-ring-num">{{navValue}}</text>
+          <text class="nav-ring-unit">{{navUnit}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{navOpen}}" class="nav-mask" bindtap="onNavClose" catchtouchmove="noop"></view>
+
+  <view wx:if="{{navOpen}}" class="nav-menu" style="right: {{navRingRight}}px; top: {{navMenuTop}}px;">
+    <view class="nav-caret" style="right: {{navCaretRight}}px;"></view>
+    <view
+      wx:for="{{navItems}}" wx:key="key"
+      class="nav-item {{item.active ? 'active' : ''}}"
+      data-key="{{item.key}}" bindtap="onNavPick"
+    >
+      <view class="nav-mark" style="background: {{item.tint}}; color: {{item.accent}}">{{item.mark}}</view>
+      <text class="nav-label">{{item.label}}</text>
+      <text wx:if="{{item.active}}" class="nav-check">✓</text>
+    </view>
+  </view>
+</view>

@@ -23,16 +23,14 @@
   color: #0f8a5a;
   box-shadow: 0 4rpx 10rpx rgba(15, 138, 90, 0.16);
 }
-/* 法语页顶部方式条：右侧让出悬浮球 */
+/* 顶部方式条 */
 .quiz-way {
-  padding-right: 200rpx;
   margin-bottom: 8rpx;
 }
 .quiz-way-desc {
   font-size: 22rpx;
   color: #8ea196;
   line-height: 1.5;
-  padding-right: 180rpx;
   margin-bottom: 18rpx;
 }
 

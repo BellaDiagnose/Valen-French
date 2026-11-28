@@ -197,26 +197,6 @@ def build(content_scale=1.0):
     return base.resize((OUT, OUT), Image.LANCZOS)
 
 
-def export_pwa(icon):
-    """输出 PWA 所需图标：常规 192/512、iOS 触屏 180、Android maskable 512"""
-    out_dir = os.path.join(os.path.dirname(ROOT), 'pwa/icons')
-    os.makedirs(out_dir, exist_ok=True)
-
-    targets = [('icon-512.png', 512), ('icon-192.png', 192), ('apple-touch-icon-180.png', 180)]
-    for name, size in targets:
-        icon.resize((size, size), Image.LANCZOS).save(os.path.join(out_dir, name), format='PNG', optimize=True)
-
-    # maskable：主体收到中央 78%，四周由品牌渐变铺满，适配 Android 圆形/方形遮罩
-    maskable = build(content_scale=0.78).convert('RGB').resize((512, 512), Image.LANCZOS)
-    maskable.save(os.path.join(out_dir, 'icon-maskable-512.png'), format='PNG', optimize=True)
-
-    for name, _ in targets:
-        path = os.path.join(out_dir, name)
-        print(f'  pwa/icons/{name} ({os.path.getsize(path) // 1024}KB)')
-    path = os.path.join(out_dir, 'icon-maskable-512.png')
-    print(f'  pwa/icons/icon-maskable-512.png ({os.path.getsize(path) // 1024}KB)')
-
-
 def rounded_preview(icon, radius=232, bg=(236, 238, 245)):
     mask = Image.new('L', icon.size, 0)
     ImageDraw.Draw(mask).rounded_rectangle([0, 0, icon.size[0] - 1, icon.size[1] - 1],
@@ -238,7 +218,6 @@ def main():
     os.makedirs(ICONSET, exist_ok=True)
     target = os.path.join(ICONSET, 'AppIcon-1024.png')
     icon.save(target, format='PNG', optimize=True)
-    export_pwa(icon)
 
     if args.preview:
         p = os.path.join(ROOT, 'Design/appicon-preview.png')

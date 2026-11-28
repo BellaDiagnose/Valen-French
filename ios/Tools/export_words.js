@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 /**
- * 把小程序的数据模块无损导出为 iOS + PWA 共用的 Words.json / Science.json
+ * 把小程序的数据模块无损导出为 iOS 用的 Words.json / Science.json
  *
  *   node ios/Tools/export_words.js
  *
  * 数据源：miniprogram/pages/french/{data,enavant,conjugation}.js
  *         miniprogram/pages/science/{data-bio,data-chem,data-formula}.js
  * 输出：  ios/ValenFrench/Resources/{Words,Science}.json
- *         pwa/data/{words,science}.json
  *
- * 改了词库/例句/变位/科学知识点后重新执行本脚本即可，iOS 与 PWA 两端无需改代码。
+ * 改了词库/例句/变位/科学知识点后重新执行本脚本即可，iOS 端无需改代码。
  */
 const fs = require('fs');
 const path = require('path');
@@ -89,23 +88,16 @@ const out = {
 
 const json = JSON.stringify(out);
 
-// 1) iOS：打进 app bundle
+// iOS：打进 app bundle
 const iosTarget = path.join(root, 'ios/ValenFrench/Resources/Words.json');
 fs.writeFileSync(iosTarget, json);
 
-// 2) PWA：作为被 Service Worker 预缓存的离线数据
-const pwaDir = path.join(root, 'pwa/data');
-fs.mkdirSync(pwaDir, { recursive: true });
-const pwaTarget = path.join(pwaDir, 'words.json');
-fs.writeFileSync(pwaTarget, json);
-
 const kb = (fs.statSync(iosTarget).size / 1024).toFixed(0);
 console.log(`✓ ${iosTarget} (${kb}KB)`);
-console.log(`✓ ${pwaTarget} (${kb}KB)`);
 console.log(`  词条：En Avant ${enavant.length} / 简明法语 ${simple.length}`);
 console.log(`  动词 ${verbs.length}（五时态）· 词卡变位 ${Object.keys(conjugations).length} · 语法 ${grammarSimple.length} 课 · 知识点 ${E.enavantPoints.length} 条 / ${E.enavantUnits.length} 单元`);
 
-// ---- 科学（七+八年级生物 / 八年级化学 / 公式），三端同源 ----
+// ---- 科学（七+八年级生物 / 八年级化学 / 公式），与小程序同源 ----
 const scienceDir = path.join(root, 'miniprogram/pages/science');
 const B = require(path.join(scienceDir, 'data-bio.js'));
 const C2 = require(path.join(scienceDir, 'data-chem.js'));
@@ -121,11 +113,8 @@ const science = {
 const scienceJson = JSON.stringify(science);
 
 const iosScience = path.join(root, 'ios/ValenFrench/Resources/Science.json');
-const pwaScience = path.join(pwaDir, 'science.json');
 fs.writeFileSync(iosScience, scienceJson);
-fs.writeFileSync(pwaScience, scienceJson);
 
 const skb = (fs.statSync(iosScience).size / 1024).toFixed(0);
 console.log(`✓ ${iosScience} (${skb}KB)`);
-console.log(`✓ ${pwaScience} (${skb}KB)`);
 console.log(`  科学：生物 ${B.points.length} / 化学 ${C2.points.length} / 公式 ${F.formulas.length} 条`);

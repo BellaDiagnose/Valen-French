@@ -122,7 +122,7 @@ final class ScienceBank {
 /// 化学式 / 方程式的断行：一行放得下就一行，放不下按运算符断成两行，
 /// 免得 SwiftUI 在任意空格处折行、留下单独一行孤零零的 6O₂。
 /// 断点优先级：箭头 → 等号 → 竖线 → 间隔号；运算符留在断点前那一行的行尾。
-/// 与小程序 `common/equation.js`、PWA `eqLayout` 同一套规则。
+/// 与小程序 `common/equation.js` 同一套规则。
 enum EquationLayout {
     struct Group {
         let op: String
